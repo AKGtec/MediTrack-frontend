@@ -1,0 +1,151 @@
+<div class="patient-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Welcome back, {{ patientInfo.name }}!</h1>
+    <p class="dashboard-subtitle">Manage your health and appointments with ease.</p>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="action-btn primary" (click)="onBookAppointment()">
+      <i class="icon">add</i>
+      <span>Book Appointment</span>
+    </button>
+    <button class="action-btn secondary" (click)="onViewRecords()">
+      <i class="icon">description</i>
+      <span>View Records</span>
+    </button>
+    <button class="action-btn success" (click)="onContactDoctor()">
+      <i class="icon">message</i>
+      <span>Message Doctor</span>
+    </button>
+    <button class="action-btn info" (click)="onUpdateProfile()">
+      <i class="icon">person</i>
+      <span>Update Profile</span>
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content">
+    <!-- Upcoming Appointments -->
+    <div class="appointments-section">
+      <div class="section-header">
+        <h2>Upcoming Appointments</h2>
+        <button class="btn-link">View All</button>
+      </div>
+
+      <div class="appointments-list">
+        <div class="appointment-card" *ngFor="let appointment of upcomingAppointments"
+             (click)="onViewAppointment(appointment.id)">
+          <div class="appointment-header">
+            <div class="doctor-info">
+              <h3>{{ appointment.doctorName }}</h3>
+              <span class="specialty">{{ appointment.specialty }}</span>
+            </div>
+            <div class="appointment-status" [ngClass]="appointment.status">
+              {{ appointment.status | titlecase }}
+            </div>
+          </div>
+          <div class="appointment-details">
+            <div class="detail-item">
+              <i class="icon">event</i>
+              <span>{{ appointment.date }}</span>
+            </div>
+            <div class="detail-item">
+              <i class="icon">schedule</i>
+              <span>{{ appointment.time }}</span>
+            </div>
+            <div class="detail-item">
+              <i class="icon">healing</i>
+              <span>{{ appointment.type }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Metrics -->
+    <div class="health-section">
+      <div class="section-header">
+        <h2>Health Metrics</h2>
+        <button class="btn-link">View Details</button>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card" *ngFor="let metric of healthMetrics">
+          <div class="metric-header">
+            <h3>{{ metric.label }}</h3>
+            <div class="metric-status" [ngClass]="metric.status">
+              <i class="icon" [ngClass]="metric.trend">{{ getTrendIcon(metric.trend) }}</i>
+            </div>
+          </div>
+          <div class="metric-value">
+            <span class="value">{{ metric.value }}</span>
+            <span class="unit">{{ metric.unit }}</span>
+          </div>
+          <div class="metric-status-text" [ngClass]="metric.status">
+            {{ metric.status | titlecase }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Medical Records -->
+    <div class="records-section">
+      <div class="section-header">
+        <h2>Recent Medical Records</h2>
+        <button class="btn-link">View All Records</button>
+      </div>
+
+      <div class="records-list">
+        <div class="record-card" *ngFor="let record of recentRecords">
+          <div class="record-header">
+            <div class="record-type">
+              <i class="icon">{{ getRecordIcon(record.type) }}</i>
+              <span>{{ record.type }}</span>
+            </div>
+            <div class="record-date">{{ record.date }}</div>
+          </div>
+          <div class="record-doctor">
+            <i class="icon">person</i>
+            <span>{{ record.doctor }}</span>
+          </div>
+          <div class="record-summary">
+            {{ record.summary }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient Info Summary -->
+    <div class="info-section">
+      <div class="section-header">
+        <h2>Patient Information</h2>
+        <button class="btn-link">Edit Profile</button>
+      </div>
+
+      <div class="info-card">
+        <div class="info-item">
+          <label>Age</label>
+          <span>{{ patientInfo.age }} years</span>
+        </div>
+        <div class="info-item">
+          <label>Blood Type</label>
+          <span>{{ patientInfo.bloodType }}</span>
+        </div>
+        <div class="info-item">
+          <label>Allergies</label>
+          <div class="allergies-list">
+            <span class="allergy-tag" *ngFor="let allergy of patientInfo.allergies">
+              {{ allergy }}
+            </span>
+          </div>
+        </div>
+        <div class="info-item">
+          <label>Emergency Contact</label>
+          <span>{{ patientInfo.emergencyContact }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

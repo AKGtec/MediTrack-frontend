@@ -1,0 +1,182 @@
+<div class="appointments-management">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1 class="page-title">Appointments Management</h1>
+      <p class="page-subtitle">Monitor and manage all appointments</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ getAppointmentCount('scheduled') }}</span>
+        <span class="stat-label">Scheduled</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ getAppointmentCount('confirmed') }}</span>
+        <span class="stat-label">Confirmed</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ getAppointmentCount('completed') }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="search-box">
+      <i class="icon">search</i>
+      <input
+        type="text"
+        placeholder="Search appointments..."
+        [(ngModel)]="searchTerm"
+        (input)="filterAppointments()">
+    </div>
+    <div class="status-filter">
+      <select [(ngModel)]="selectedStatus" (change)="filterAppointments()">
+        <option value="all">All Status</option>
+        <option value="scheduled">Scheduled</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="date-filter">
+      <input
+        type="date"
+        [(ngModel)]="selectedDate"
+        (change)="filterAppointments()"
+        placeholder="Filter by date">
+    </div>
+  </div>
+
+  <!-- Appointments List -->
+  <div class="appointments-list">
+    <div class="appointment-card" *ngFor="let appointment of filteredAppointments"
+         (click)="openDetailsModal(appointment)">
+      <div class="appointment-header">
+        <div class="appointment-info">
+          <div class="patient-name">{{ appointment.patientName }}</div>
+          <div class="appointment-type">{{ appointment.type }}</div>
+        </div>
+        <div class="status-badge" [style.background-color]="getStatusColor(appointment.status)">
+          <i class="icon">{{ getStatusIcon(appointment.status) }}</i>
+          <span>{{ appointment.status | titlecase }}</span>
+        </div>
+      </div>
+
+      <div class="appointment-details">
+        <div class="detail-item">
+          <i class="icon">person</i>
+          <span>{{ appointment.doctorName }}</span>
+        </div>
+        <div class="detail-item">
+          <i class="icon">event</i>
+          <span>{{ formatDate(appointment.date) }}</span>
+        </div>
+        <div class="detail-item">
+          <i class="icon">schedule</i>
+          <span>{{ appointment.time }}</span>
+        </div>
+      </div>
+
+      <div class="appointment-notes" *ngIf="appointment.notes">
+        <i class="icon">notes</i>
+        <span>{{ appointment.notes }}</span>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredAppointments.length === 0">
+      <div class="empty-icon">
+        <i class="icon">event_busy</i>
+      </div>
+      <h3>No appointments found</h3>
+      <p>Try adjusting your search criteria</p>
+    </div>
+  </div>
+
+  <!-- Appointment Details Modal -->
+  <div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Appointment Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedAppointment">
+        <div class="detail-section">
+          <h3>Patient Information</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Name:</label>
+              <span>{{ selectedAppointment.patientName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Doctor:</label>
+              <span>{{ selectedAppointment.doctorName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Type:</label>
+              <span>{{ selectedAppointment.type }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Date & Time:</label>
+              <span>{{ formatDate(selectedAppointment.date) }} at {{ selectedAppointment.time }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Status & Notes</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Current Status:</label>
+              <span class="status-text" [style.color]="getStatusColor(selectedAppointment.status)">
+                {{ selectedAppointment.status | titlecase }}
+              </span>
+            </div>
+            <div class="detail-item full-width">
+              <label>Notes:</label>
+              <span>{{ selectedAppointment.notes }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-actions">
+          <h3>Update Status</h3>
+          <div class="action-buttons">
+            <button
+              class="status-btn scheduled"
+              (click)="updateAppointmentStatus(selectedAppointment, 'scheduled')"
+              [disabled]="selectedAppointment.status === 'scheduled'">
+              Mark as Scheduled
+            </button>
+            <button
+              class="status-btn confirmed"
+              (click)="updateAppointmentStatus(selectedAppointment, 'confirmed')"
+              [disabled]="selectedAppointment.status === 'confirmed'">
+              Confirm Appointment
+            </button>
+            <button
+              class="status-btn completed"
+              (click)="updateAppointmentStatus(selectedAppointment, 'completed')"
+              [disabled]="selectedAppointment.status === 'completed'">
+              Mark as Completed
+            </button>
+            <button
+              class="status-btn cancelled"
+              (click)="updateAppointmentStatus(selectedAppointment, 'cancelled')"
+              [disabled]="selectedAppointment.status === 'cancelled'">
+              Cancel Appointment
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn primary" (click)="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

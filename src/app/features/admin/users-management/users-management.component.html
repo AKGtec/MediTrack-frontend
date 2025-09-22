@@ -1,0 +1,287 @@
+<div class="users-management">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1 class="page-title">Users Management</h1>
+      <p class="page-subtitle">Manage doctors, patients, and administrators</p>
+    </div>
+    <button class="add-user-btn" (click)="openAddModal()" [disabled]="isLoading">
+      <i class="icon">person_add</i>
+      <span>Add User</span>
+    </button>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" *ngIf="error">
+    <i class="icon">error</i>
+    <span>{{ error }}</span>
+    <button class="close-error" (click)="error = null">
+      <i class="icon">close</i>
+    </button>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div class="loading-indicator" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <span>Loading...</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="search-box">
+      <i class="icon">search</i>
+      <input
+        type="text"
+        placeholder="Search users..."
+        [(ngModel)]="searchTerm"
+        (input)="filterUsers()"
+        [disabled]="isLoading">
+    </div>
+    <div class="role-filter">
+      <select [(ngModel)]="selectedRole" (change)="filterUsers()" [disabled]="isLoading">
+        <option value="all">All Roles</option>
+        <option value="admin">Admin</option>
+        <option value="doctor">Doctor</option>
+        <option value="patient">Patient</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="users-table">
+    <div class="table-header">
+      <div class="header-cell">User</div>
+      <div class="header-cell">Role</div>
+      <div class="header-cell">Status</div>
+      <div class="header-cell">Last Login</div>
+      <div class="header-cell">Actions</div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let user of filteredUsers">
+        <div class="table-cell user-info">
+          <div class="user-avatar" [style.background]="'linear-gradient(135deg, ' + getRoleColor(user.role) + ', ' + getRoleColor(user.role) + '80)'">
+            {{ user.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="user-details">
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-email">{{ user.email }}</div>
+            <div class="user-phone" *ngIf="user.phoneNumber">{{ user.phoneNumber }}</div>
+          </div>
+        </div>
+
+        <div class="table-cell">
+          <span class="role-badge" [style.background-color]="getRoleColor(user.role)">
+            {{ user.role | titlecase }}
+          </span>
+        </div>
+
+        <div class="table-cell">
+          <span class="status-badge" [style.background-color]="getStatusColor(user.status)">
+            {{ user.status | titlecase }}
+          </span>
+        </div>
+
+        <div class="table-cell">
+          <span class="last-login">{{ user.lastLogin }}</span>
+        </div>
+
+        <div class="table-cell actions">
+          <button class="action-btn edit" (click)="openEditModal(user)" title="Edit" [disabled]="isLoading">
+            <i class="icon">edit</i>
+          </button>
+          <button class="action-btn toggle" (click)="toggleUserStatus(user)"
+                  [title]="user.status === 'active' ? 'Deactivate' : 'Activate'"
+                  [disabled]="isLoading">
+            <i class="icon">{{ user.status === 'active' ? 'block' : 'check_circle' }}</i>
+          </button>
+          <button class="action-btn delete" (click)="deleteUser(user)" title="Delete" [disabled]="isLoading">
+            <i class="icon">delete</i>
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="filteredUsers.length === 0 && !isLoading">
+        <div class="empty-icon">
+          <i class="icon">people</i>
+        </div>
+        <h3>No users found</h3>
+        <p>Try adjusting your search criteria or add a new user</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Add New User</h2>
+        <button class="close-btn" (click)="closeAddModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="error-message" *ngIf="error">
+          <i class="icon">error</i>
+          <span>{{ error }}</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="new-firstName">First Name</label>
+            <input
+              id="new-firstName"
+              type="text"
+              [(ngModel)]="newUser.firstName"
+              placeholder="Enter first name"
+              [disabled]="isLoading">
+          </div>
+
+          <div class="form-group">
+            <label for="new-lastName">Last Name</label>
+            <input
+              id="new-lastName"
+              type="text"
+              [(ngModel)]="newUser.lastName"
+              placeholder="Enter last name"
+              [disabled]="isLoading">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="new-email">Email</label>
+          <input
+            id="new-email"
+            type="email"
+            [(ngModel)]="newUser.email"
+            placeholder="Enter email address"
+            [disabled]="isLoading">
+        </div>
+
+        <div class="form-group">
+          <label for="new-password">Password</label>
+          <input
+            id="new-password"
+            type="password"
+            [(ngModel)]="newUser.password"
+            placeholder="Enter password"
+            [disabled]="isLoading">
+        </div>
+
+        <div class="form-group">
+          <label for="new-phone">Phone Number</label>
+          <input
+            id="new-phone"
+            type="tel"
+            [(ngModel)]="newUser.phoneNumber"
+            placeholder="Enter phone number"
+            [disabled]="isLoading">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="new-role">Role</label>
+            <select id="new-role" [(ngModel)]="newUser.role" [disabled]="isLoading">
+              <option *ngFor="let option of roleOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="new-status">Status</label>
+            <select id="new-status" [(ngModel)]="newUser.status" [disabled]="isLoading">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn secondary" (click)="closeAddModal()" [disabled]="isLoading">Cancel</button>
+        <button class="btn primary" (click)="addUser()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Add User</span>
+          <span *ngIf="isLoading">Adding...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Edit User</h2>
+        <button class="close-btn" (click)="closeEditModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedUser">
+        <div class="error-message" *ngIf="error">
+          <i class="icon">error</i>
+          <span>{{ error }}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-name">Full Name</label>
+          <input
+            id="edit-name"
+            type="text"
+            [(ngModel)]="selectedUser.name"
+            placeholder="Enter full name"
+            [disabled]="isLoading">
+        </div>
+
+        <div class="form-group">
+          <label for="edit-email">Email</label>
+          <input
+            id="edit-email"
+            type="email"
+            [(ngModel)]="selectedUser.email"
+            placeholder="Enter email address"
+            [disabled]="isLoading">
+        </div>
+
+        <div class="form-group">
+          <label for="edit-phone">Phone Number</label>
+          <input
+            id="edit-phone"
+            type="tel"
+            [(ngModel)]="selectedUser.phoneNumber"
+            placeholder="Enter phone number"
+            [disabled]="isLoading">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-role">Role</label>
+            <select id="edit-role" [(ngModel)]="selectedUser.role" [disabled]="isLoading">
+              <option value="patient">Patient</option>
+              <option value="doctor">Doctor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-status">Status</label>
+            <select id="edit-status" [(ngModel)]="selectedUser.status" [disabled]="isLoading">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn secondary" (click)="closeEditModal()" [disabled]="isLoading">Cancel</button>
+        <button class="btn primary" (click)="updateUser()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Update User</span>
+          <span *ngIf="isLoading">Updating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

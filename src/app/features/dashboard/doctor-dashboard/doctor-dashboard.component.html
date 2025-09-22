@@ -1,0 +1,159 @@
+<div class="doctor-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Doctor Dashboard</h1>
+    <p class="dashboard-subtitle">Manage your appointments and patient care efficiently.</p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-overview">
+    <div class="stat-item">
+      <div class="stat-number">{{ stats.todaysAppointments }}</div>
+      <div class="stat-label">Today's Appointments</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">{{ stats.totalPatients }}</div>
+      <div class="stat-label">Total Patients</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">{{ stats.pendingPrescriptions }}</div>
+      <div class="stat-label">Pending Prescriptions</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">{{ stats.completedToday }}</div>
+      <div class="stat-label">Completed Today</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content">
+    <!-- Today's Appointments -->
+    <div class="appointments-section">
+      <div class="section-header">
+        <h2>Today's Appointments</h2>
+        <button class="btn-secondary" (click)="onViewAllAppointments()">View All</button>
+      </div>
+
+      <div class="appointments-list">
+        <div class="appointment-card" *ngFor="let appointment of todaysAppointments"
+             [ngClass]="appointment.status">
+          <div class="appointment-info">
+            <div class="patient-name">{{ appointment.patientName }}</div>
+            <div class="appointment-details">
+              <span class="time">{{ appointment.time }}</span>
+              <span class="type">{{ appointment.type }}</span>
+            </div>
+          </div>
+          <div class="appointment-actions">
+            <span class="status-badge" [ngClass]="appointment.status">
+              {{ appointment.status | titlecase }}
+            </span>
+            <button class="btn-primary" (click)="onStartConsultation(appointment.id)"
+                    *ngIf="appointment.status === 'confirmed'">
+              Start Consultation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="upcoming-section">
+      <div class="section-header">
+        <h2>Upcoming Appointments</h2>
+      </div>
+
+      <div class="upcoming-list">
+        <div class="upcoming-item" *ngFor="let appointment of upcomingAppointments">
+          <div class="appointment-info">
+            <div class="patient-name">{{ appointment.patientName }}</div>
+            <div class="appointment-details">
+              <span class="time">{{ appointment.time }}</span>
+              <span class="type">{{ appointment.type }}</span>
+            </div>
+          </div>
+          <div class="status-badge" [ngClass]="appointment.status">
+            {{ appointment.status | titlecase }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Patients -->
+    <div class="patients-section">
+      <div class="section-header">
+        <h2>Recent Patients</h2>
+        <button class="btn-secondary">View All Patients</button>
+      </div>
+
+      <div class="patients-grid">
+        <div class="patient-card" *ngFor="let patient of recentPatients"
+             (click)="onViewPatient(patient.id)">
+          <div class="patient-avatar">
+            <i class="icon">person</i>
+          </div>
+          <div class="patient-info">
+            <h3>{{ patient.name }}</h3>
+            <div class="patient-details">
+              <span class="detail-item">
+                <i class="icon">schedule</i>
+                Last: {{ patient.lastVisit }}
+              </span>
+              <span class="detail-item">
+                <i class="icon">event</i>
+                Next: {{ patient.nextAppointment }}
+              </span>
+              <span class="detail-item">
+                <i class="icon">healing</i>
+                {{ patient.condition }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="action-card" (click)="onUpdateSchedule()">
+      <div class="action-icon">
+        <i class="icon">schedule</i>
+      </div>
+      <div class="action-content">
+        <h3>Update Schedule</h3>
+        <p>Manage your availability</p>
+      </div>
+    </button>
+
+    <button class="action-card">
+      <div class="action-icon">
+        <i class="icon">prescription</i>
+      </div>
+      <div class="action-content">
+        <h3>Prescriptions</h3>
+        <p>View and manage prescriptions</p>
+      </div>
+    </button>
+
+    <button class="action-card">
+      <div class="action-icon">
+        <i class="icon">lab</i>
+      </div>
+      <div class="action-content">
+        <h3>Lab Results</h3>
+        <p>Review test results</p>
+      </div>
+    </button>
+
+    <button class="action-card">
+      <div class="action-icon">
+        <i class="icon">message</i>
+      </div>
+      <div class="action-content">
+        <h3>Messages</h3>
+        <p>Patient communications</p>
+      </div>
+    </button>
+  </div>
+</div>

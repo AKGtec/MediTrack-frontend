@@ -1,0 +1,207 @@
+<div class="reports">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1 class="page-title">Reports & Analytics</h1>
+      <p class="page-subtitle">Comprehensive insights into clinic performance</p>
+    </div>
+    <div class="header-actions">
+      <div class="period-selector">
+        <select [(ngModel)]="selectedPeriod" (change)="changePeriod($event)">
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="quarter">This Quarter</option>
+          <option value="year">This Year</option>
+        </select>
+      </div>
+      <button class="export-btn" (click)="exportReport()">
+        <i class="icon">download</i>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="stats-grid">
+    <div class="stat-card appointments">
+      <div class="stat-icon">
+        <i class="icon">event_available</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ summaryStats.totalAppointments }}</h3>
+        <p>Total Appointments</p>
+        <span class="stat-change positive">+12%</span>
+      </div>
+    </div>
+
+    <div class="stat-card revenue">
+      <div class="stat-icon">
+        <i class="icon">attach_money</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ formatCurrency(summaryStats.totalRevenue) }}</h3>
+        <p>Total Revenue</p>
+        <span class="stat-change positive">+8%</span>
+      </div>
+    </div>
+
+    <div class="stat-card patients">
+      <div class="stat-icon">
+        <i class="icon">people</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ summaryStats.totalPatients }}</h3>
+        <p>Total Patients</p>
+        <span class="stat-change positive">+15%</span>
+      </div>
+    </div>
+
+    <div class="stat-card rating">
+      <div class="stat-icon">
+        <i class="icon">star</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ summaryStats.averageRating }}</h3>
+        <p>Average Rating</p>
+        <span class="stat-change positive">+0.2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="charts-grid">
+    <!-- Appointments Chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Appointment Status</h2>
+      </div>
+      <div class="chart-content">
+        <div class="chart-bars">
+          <div class="chart-bar" *ngFor="let item of appointmentData">
+            <div class="bar-fill" [style.height]="getChartBarHeight(item.value, 300)"
+                 [style.background-color]="item.color"></div>
+            <div class="bar-label">{{ item.label }}</div>
+            <div class="bar-value">{{ item.value }}</div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item" *ngFor="let item of appointmentData">
+            <div class="legend-color" [style.background-color]="item.color"></div>
+            <span class="legend-text">{{ item.label }} ({{ item.percentage }}%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue Breakdown -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Revenue Breakdown</h2>
+      </div>
+      <div class="chart-content">
+        <div class="pie-chart">
+          <div class="pie-segment" *ngFor="let item of revenueData"
+               [style.background]="'conic-gradient(' + item.color + ' 0deg ' + (item.percentage * 3.6) + 'deg, transparent ' + (item.percentage * 3.6) + 'deg 360deg)'">
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item" *ngFor="let item of revenueData">
+            <div class="legend-color" [style.background-color]="item.color"></div>
+            <span class="legend-text">{{ item.label }} - {{ formatCurrency(item.value) }} ({{ item.percentage }}%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient Demographics -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Patient Distribution</h2>
+      </div>
+      <div class="chart-content">
+        <div class="doughnut-chart">
+          <div class="doughnut-segment" *ngFor="let item of patientData; let i = index"
+               [style.background]="'conic-gradient(' + item.color + ' 0deg ' + (item.percentage * 3.6) + 'deg, transparent ' + (item.percentage * 3.6) + 'deg 360deg)'"
+               [style.clip-path]="'polygon(50% 50%, 50% 0%, ' + (50 + 40 * Math.cos((item.percentage * 3.6 - 90) * Math.PI / 180)) + '% ' + (50 + 40 * Math.sin((item.percentage * 3.6 - 90) * Math.PI / 180)) + '%)'">
+          </div>
+        </div>
+        <div class="chart-center">
+          <div class="center-value">{{ patientData[0].value + patientData[1].value }}</div>
+          <div class="center-label">Total Patients</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item" *ngFor="let item of patientData">
+            <div class="legend-color" [style.background-color]="item.color"></div>
+            <span class="legend-text">{{ item.label }} ({{ item.percentage }}%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Trends -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Monthly Trends</h2>
+      </div>
+      <div class="chart-content">
+        <div class="trend-chart">
+          <div class="trend-metric">
+            <h4>Appointments</h4>
+            <div class="trend-bars">
+              <div class="trend-bar" *ngFor="let trend of monthlyTrends">
+                <div class="trend-fill" [style.height]="getChartBarHeight(trend.appointments, 400)"></div>
+                <div class="trend-label">{{ trend.month }}</div>
+                <div class="trend-value">{{ trend.appointments }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="trend-metric">
+            <h4>Revenue</h4>
+            <div class="trend-bars">
+              <div class="trend-bar" *ngFor="let trend of monthlyTrends">
+                <div class="trend-fill" [style.height]="getChartBarHeight(trend.revenue, 30000)"></div>
+                <div class="trend-label">{{ trend.month }}</div>
+                <div class="trend-value">{{ formatCurrency(trend.revenue) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal-overlay" *ngIf="showExportModal" (click)="closeExportModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Export Report</h2>
+        <button class="close-btn" (click)="closeExportModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>Choose the format for your report export:</p>
+        <div class="export-options">
+          <button class="export-option" (click)="downloadReport('pdf')">
+            <i class="icon">picture_as_pdf</i>
+            <span>PDF Report</span>
+          </button>
+          <button class="export-option" (click)="downloadReport('excel')">
+            <i class="icon">table_chart</i>
+            <span>Excel Spreadsheet</span>
+          </button>
+          <button class="export-option" (click)="downloadReport('csv')">
+            <i class="icon">description</i>
+            <span>CSV File</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn secondary" (click)="closeExportModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

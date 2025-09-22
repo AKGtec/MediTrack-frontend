@@ -1,0 +1,248 @@
+<div class="billing">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1 class="page-title">Billing & Payments</h1>
+      <p class="page-subtitle">Manage invoices, payments, and financial records</p>
+    </div>
+    <div class="view-toggle">
+      <button
+        class="toggle-btn"
+        [class.active]="currentView === 'invoices'"
+        (click)="switchView('invoices')">
+        Invoices
+      </button>
+      <button
+        class="toggle-btn"
+        [class.active]="currentView === 'payments'"
+        (click)="switchView('payments')">
+        Payments
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card revenue">
+      <div class="stat-icon">
+        <i class="icon">attach_money</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ formatCurrency(billingStats.totalRevenue) }}</h3>
+        <p>Total Revenue</p>
+      </div>
+    </div>
+
+    <div class="stat-card pending">
+      <div class="stat-icon">
+        <i class="icon">schedule</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ formatCurrency(billingStats.pendingPayments) }}</h3>
+        <p>Pending Payments</p>
+      </div>
+    </div>
+
+    <div class="stat-card overdue">
+      <div class="stat-icon">
+        <i class="icon">warning</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ billingStats.overdueInvoices }}</h3>
+        <p>Overdue Invoices</p>
+      </div>
+    </div>
+
+    <div class="stat-card monthly">
+      <div class="stat-icon">
+        <i class="icon">trending_up</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ formatCurrency(billingStats.monthlyRevenue) }}</h3>
+        <p>This Month</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="search-box">
+      <i class="icon">search</i>
+      <input
+        type="text"
+        placeholder="Search..."
+        [(ngModel)]="searchTerm"
+        (input)="currentView === 'invoices' ? filterInvoices() : filterPayments()">
+    </div>
+    <div class="status-filter" *ngIf="currentView === 'invoices'">
+      <select [(ngModel)]="selectedStatus" (change)="filterInvoices()">
+        <option value="all">All Status</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+        <option value="overdue">Overdue</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Invoices View -->
+  <div class="data-table" *ngIf="currentView === 'invoices'">
+    <div class="table-header">
+      <div class="header-cell">Patient</div>
+      <div class="header-cell">Amount</div>
+      <div class="header-cell">Status</div>
+      <div class="header-cell">Due Date</div>
+      <div class="header-cell">Actions</div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let invoice of filteredInvoices" (click)="openInvoiceModal(invoice)">
+        <div class="table-cell patient-info">
+          <div class="patient-name">{{ invoice.patientName }}</div>
+          <div class="invoice-description">{{ invoice.description }}</div>
+        </div>
+
+        <div class="table-cell amount">
+          <span class="amount-value">{{ formatCurrency(invoice.amount) }}</span>
+        </div>
+
+        <div class="table-cell">
+          <span class="status-badge" [style.background-color]="getStatusColor(invoice.status)">
+            <i class="icon">{{ getStatusIcon(invoice.status) }}</i>
+            <span>{{ invoice.status | titlecase }}</span>
+          </span>
+        </div>
+
+        <div class="table-cell">
+          <span class="due-date">{{ formatDate(invoice.dueDate) }}</span>
+        </div>
+
+        <div class="table-cell actions">
+          <button class="action-btn view" title="View Details">
+            <i class="icon">visibility</i>
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="filteredInvoices.length === 0">
+        <div class="empty-icon">
+          <i class="icon">receipt</i>
+        </div>
+        <h3>No invoices found</h3>
+        <p>Try adjusting your search criteria</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payments View -->
+  <div class="data-table" *ngIf="currentView === 'payments'">
+    <div class="table-header">
+      <div class="header-cell">Patient</div>
+      <div class="header-cell">Amount</div>
+      <div class="header-cell">Method</div>
+      <div class="header-cell">Date</div>
+      <div class="header-cell">Status</div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let payment of filteredPayments">
+        <div class="table-cell patient-info">
+          <div class="patient-name">{{ payment.patientName }}</div>
+          <div class="invoice-id">Invoice #{{ payment.invoiceId }}</div>
+        </div>
+
+        <div class="table-cell amount">
+          <span class="amount-value">{{ formatCurrency(payment.amount) }}</span>
+        </div>
+
+        <div class="table-cell">
+          <div class="payment-method">
+            <i class="icon">{{ getMethodIcon(payment.method) }}</i>
+            <span>{{ payment.method.replace('_', ' ') | titlecase }}</span>
+          </div>
+        </div>
+
+        <div class="table-cell">
+          <span class="payment-date">{{ formatDate(payment.date) }}</span>
+        </div>
+
+        <div class="table-cell">
+          <span class="status-badge" [style.background-color]="getStatusColor(payment.status)">
+            <i class="icon">{{ getStatusIcon(payment.status) }}</i>
+            <span>{{ payment.status | titlecase }}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="filteredPayments.length === 0">
+        <div class="empty-icon">
+          <i class="icon">payment</i>
+        </div>
+        <h3>No payments found</h3>
+        <p>Try adjusting your search criteria</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Details Modal -->
+  <div class="modal-overlay" *ngIf="showInvoiceModal" (click)="closeInvoiceModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Invoice Details</h2>
+        <button class="close-btn" (click)="closeInvoiceModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedInvoice">
+        <div class="invoice-details">
+          <div class="detail-row">
+            <label>Invoice ID:</label>
+            <span>#{{ selectedInvoice.id }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Patient:</label>
+            <span>{{ selectedInvoice.patientName }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Appointment ID:</label>
+            <span>{{ selectedInvoice.appointmentId }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Description:</label>
+            <span>{{ selectedInvoice.description }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Amount:</label>
+            <span class="amount-highlight">{{ formatCurrency(selectedInvoice.amount) }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Issue Date:</label>
+            <span>{{ formatDate(selectedInvoice.issueDate) }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Due Date:</label>
+            <span>{{ formatDate(selectedInvoice.dueDate) }}</span>
+          </div>
+
+          <div class="detail-row">
+            <label>Status:</label>
+            <span class="status-text" [style.color]="getStatusColor(selectedInvoice.status)">
+              {{ selectedInvoice.status | titlecase }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn secondary" (click)="closeInvoiceModal()">Close</button>
+        <button class="btn primary">Download PDF</button>
+      </div>
+    </div>
+  </div>
+</div>

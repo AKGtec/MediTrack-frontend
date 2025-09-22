@@ -1,0 +1,32 @@
+<div class="register-card">
+  <h2>Join MediTrack</h2>
+  <p>Create your account to get started</p>
+  <form (ngSubmit)="onRegister()" #registerForm="ngForm">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" [(ngModel)]="registerData.firstName" name="firstName" required>
+      </div>
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" [(ngModel)]="registerData.lastName" name="lastName" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" [(ngModel)]="registerData.email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label for="phoneNumber">Phone Number</label>
+      <input type="tel" id="phoneNumber" [(ngModel)]="registerData.phoneNumber" name="phoneNumber" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" [(ngModel)]="registerData.password" name="password" required minlength="6">
+    </div>
+    <button type="submit" [disabled]="!registerForm.valid" class="register-btn">Create Account</button>
+  </form>
+  <div class="links">
+    <a routerLink="/auth/login">Already have an account? Sign in</a>
+  </div>
+</div>

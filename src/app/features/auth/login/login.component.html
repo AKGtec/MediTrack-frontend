@@ -1,0 +1,19 @@
+<div class="login-card">
+  <h2>Welcome Back</h2>
+  <p>Sign in to your MediTrack account</p>
+  <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" [(ngModel)]="loginData.email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" [(ngModel)]="loginData.password" name="password" required>
+    </div>
+    <button type="submit" [disabled]="!loginForm.valid" class="login-btn">Sign In</button>
+  </form>
+  <div class="links">
+    <a routerLink="/auth/register">Don't have an account? Sign up</a>
+    <a routerLink="/auth/reset-password">Forgot password?</a>
+  </div>
+</div>

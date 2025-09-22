@@ -1,0 +1,163 @@
+<div class="admin-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Admin Dashboard</h1>
+    <p class="dashboard-subtitle">Welcome back! Here's what's happening with your clinic today.</p>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="action-btn primary" (click)="onQuickAction('add-user')">
+      <i class="icon">person_add</i>
+      <span>Add User</span>
+    </button>
+    <button class="action-btn secondary" (click)="onQuickAction('view-reports')">
+      <i class="icon">analytics</i>
+      <span>View Reports</span>
+    </button>
+    <button class="action-btn success" (click)="onQuickAction('manage-appointments')">
+      <i class="icon">event</i>
+      <span>Manage Appointments</span>
+    </button>
+    <button class="action-btn warning" (click)="onQuickAction('billing')">
+      <i class="icon">payment</i>
+      <span>Billing</span>
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card users">
+      <div class="stat-icon">
+        <i class="icon">people</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats.totalUsers }}</h3>
+        <p>Total Users</p>
+        <span class="stat-change positive">+12%</span>
+      </div>
+    </div>
+
+    <div class="stat-card doctors">
+      <div class="stat-icon">
+        <i class="icon">local_hospital</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats.totalDoctors }}</h3>
+        <p>Active Doctors</p>
+        <span class="stat-change positive">+5%</span>
+      </div>
+    </div>
+
+    <div class="stat-card patients">
+      <div class="stat-icon">
+        <i class="icon">healing</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats.totalPatients }}</h3>
+        <p>Registered Patients</p>
+        <span class="stat-change positive">+8%</span>
+      </div>
+    </div>
+
+    <div class="stat-card appointments">
+      <div class="stat-icon">
+        <i class="icon">event_available</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats.totalAppointments }}</h3>
+        <p>Total Appointments</p>
+        <span class="stat-change positive">+15%</span>
+      </div>
+    </div>
+
+    <div class="stat-card revenue">
+      <div class="stat-icon">
+        <i class="icon">attach_money</i>
+      </div>
+      <div class="stat-content">
+        <h3>${{ stats.monthlyRevenue.toLocaleString() }}</h3>
+        <p>Monthly Revenue</p>
+        <span class="stat-change positive">+22%</span>
+      </div>
+    </div>
+
+    <div class="stat-card pending">
+      <div class="stat-icon">
+        <i class="icon">schedule</i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats.pendingAppointments }}</h3>
+        <p>Pending Appointments</p>
+        <span class="stat-change neutral">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Recent Activities -->
+    <div class="activity-card">
+      <div class="card-header">
+        <h2>Recent Activities</h2>
+        <button class="view-all-btn">View All</button>
+      </div>
+      <div class="activity-list">
+        <div class="activity-item" *ngFor="let activity of recentActivities">
+          <div class="activity-icon" [ngClass]="activity.type">
+            <i class="icon">{{ activity.icon }}</i>
+          </div>
+          <div class="activity-content">
+            <p class="activity-text">{{ activity.action }}</p>
+            <span class="activity-time">{{ activity.time }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Monthly Overview</h2>
+        <select class="period-select">
+          <option>Last 30 days</option>
+          <option>Last 90 days</option>
+          <option>Last year</option>
+        </select>
+      </div>
+      <div class="chart-placeholder">
+        <div class="chart-bar" style="height: 60%"></div>
+        <div class="chart-bar" style="height: 80%"></div>
+        <div class="chart-bar" style="height: 40%"></div>
+        <div class="chart-bar" style="height: 90%"></div>
+        <div class="chart-bar" style="height: 70%"></div>
+        <div class="chart-bar" style="height: 85%"></div>
+      </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="health-card">
+      <div class="card-header">
+        <h2>System Health</h2>
+      </div>
+      <div class="health-metrics">
+        <div class="metric">
+          <span class="metric-label">Server Status</span>
+          <span class="metric-value healthy">Online</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Database</span>
+          <span class="metric-value healthy">Connected</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">API Response</span>
+          <span class="metric-value healthy">120ms</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Uptime</span>
+          <span class="metric-value healthy">99.9%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
