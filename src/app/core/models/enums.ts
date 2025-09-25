@@ -5,8 +5,8 @@ export enum Role {
 }
 
 export enum Gender {
-  M = 'M',
-  F = 'F',
+  M = 'Male',
+  F = 'Female',
   Other = 'Other'
 }
 
@@ -20,7 +20,8 @@ export enum AppointmentStatus {
 export enum AvailabilityStatus {
   Available = 'Available',
   Busy = 'Busy',
-  OnLeave = 'OnLeave'
+  OnLeave = 'OnLeave',
+  Unavailable = 'Unavailable' 
 }
 
 export enum InvoiceStatus {

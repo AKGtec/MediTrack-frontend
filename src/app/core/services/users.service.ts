@@ -2,76 +2,108 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { UserDto, UserRegisterDto, UserLoginDto, AuthResponseDto } from '../models/user.models';
+
+import {
+  UserDto,
+  UserRegisterDto,
+  UserLoginDto,
+  AuthResponseDto
+} from '../models/user.models';
+
+import {
+  DoctorDto,
+  CreateDoctorDto,
+  UpdateDoctorDto
+} from '../models/doctor.models';
+
+import {
+  PatientDto,
+  CreatePatientDto,
+  UpdatePatientDto
+} from '../models/patient.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsersService {
-  readonly apiUrl = `${environment.apiUrl}/Users`;
+  private readonly apiUrl = `${environment.apiUrl}/Users`;
 
-  constructor(readonly http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  /**
-   * Get all users
-   * @returns Observable of UserDto array
-   */
+  // ───────────────────── USERS ─────────────────────
   getAllUsers(): Observable<UserDto[]> {
     return this.http.get<UserDto[]>(this.apiUrl);
   }
 
-  /**
-   * Get user by ID
-   * @param id User ID
-   * @returns Observable of UserDto
-   */
   getUserById(id: number): Observable<UserDto> {
     return this.http.get<UserDto>(`${this.apiUrl}/${id}`);
   }
 
-  /**
-   * Get user by email
-   * @param email User email
-   * @returns Observable of UserDto
-   */
   getUserByEmail(email: string): Observable<UserDto> {
     return this.http.get<UserDto>(`${this.apiUrl}/Email/${email}`);
   }
 
-  /**
-   * Create a new user
-   * @param userRegisterDto User registration details
-   * @returns Observable of created UserDto
-   */
-  createUser(userRegisterDto: UserRegisterDto): Observable<UserDto> {
-    return this.http.post<UserDto>(this.apiUrl, userRegisterDto);
+  createUser(dto: UserRegisterDto): Observable<UserDto> {
+    return this.http.post<UserDto>(this.apiUrl, dto);
   }
 
-  /**
-   * Login a user
-   * @param userLoginDto User login details
-   * @returns Observable of AuthResponseDto
-   */
-  login(userLoginDto: UserLoginDto): Observable<AuthResponseDto> {
-    return this.http.post<AuthResponseDto>(`${this.apiUrl}/login`, userLoginDto);
+  login(dto: UserLoginDto): Observable<AuthResponseDto> {
+    return this.http.post<AuthResponseDto>(`${this.apiUrl}/login`, dto);
   }
 
-  /**
-   * Update an existing user
-   * @param id User ID
-   * @param userDto Updated user details
-   * @returns Observable of updated UserDto
-   */
-  updateUser(id: number, userDto: UserDto): Observable<UserDto> {
-    return this.http.put<UserDto>(`${this.apiUrl}/${id}`, userDto);
+  updateUser(id: number, dto: UserDto): Observable<UserDto> {
+    return this.http.put<UserDto>(`${this.apiUrl}/${id}`, dto);
   }
 
-  /**
-   * Delete a user
-   * @param id User ID
-   * @returns Observable of void
-   */
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  // ───────────────────── DOCTORS ─────────────────────
+  registerDoctor(dto: CreateDoctorDto): Observable<DoctorDto> {
+    return this.http.post<DoctorDto>(`${this.apiUrl}/register/doctor`, dto);
+  }
+
+  // Fixed: Changed from `/doctor/${id}` to `/${id}/doctor`
+  updateDoctor(userId: number, dto: UpdateDoctorDto): Observable<DoctorDto> {
+    return this.http.put<DoctorDto>(`${this.apiUrl}/${userId}/doctor`, dto);
+  }
+
+  // Fixed: Changed from `/doctor/${id}` to `/${id}/doctor`
+  deleteDoctor(userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${userId}/doctor`);
+  }
+
+  // Fixed: Changed from `/doctor/${id}` to `/${id}/doctor`
+  getDoctorById(userId: number): Observable<DoctorDto> {
+    return this.http.get<DoctorDto>(`${this.apiUrl}/${userId}/doctor`);
+  }
+
+  getAllDoctors(): Observable<DoctorDto[]> {
+    return this.http.get<DoctorDto[]>(`${this.apiUrl}/doctors`);
+  }
+
+  // ───────────────────── PATIENTS ─────────────────────
+  registerPatient(dto: CreatePatientDto): Observable<PatientDto> {
+    return this.http.post<PatientDto>(`${this.apiUrl}/register/patient`, dto);
+  }
+
+  // Fixed: Changed from `/patient/${id}` to `/${id}/patient`
+  updatePatient(userId: number, dto: UpdatePatientDto): Observable<PatientDto> {
+    return this.http.put<PatientDto>(`${this.apiUrl}/${userId}/patient`, dto);
+  }
+
+  // Fixed: Changed from `/patient/${id}` to `/${id}/patient`
+  deletePatient(userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${userId}/patient`);
+  }
+
+  // Fixed: Changed from `/patient/${id}` to `/${id}/patient`
+  getPatientById(userId: number): Observable<PatientDto> {
+    return this.http.get<PatientDto>(`${this.apiUrl}/${userId}/patient`);
+  }
+
+  getAllPatients(): Observable<PatientDto[]> {
+    return this.http.get<PatientDto[]>(`${this.apiUrl}/patients`);
   }
 }

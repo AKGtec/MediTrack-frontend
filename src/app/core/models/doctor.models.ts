@@ -30,6 +30,7 @@ export interface CreateDoctorDto {
 }
 
 export interface UpdateDoctorDto {
+  userId: number;
   phoneNumber: string;
   address: string;
   specialization: string;

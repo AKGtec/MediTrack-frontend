@@ -7,8 +7,8 @@ export interface UserDto {
   email: string;
   phoneNumber: string;
   dateOfBirth?: Date;
-  gender?: Gender;
-  role: Role;
+  gender?: string;
+  role: string;
 }
 
 export interface UserRegisterDto {
@@ -17,6 +17,10 @@ export interface UserRegisterDto {
   email: string;
   password: string;
   phoneNumber: string;
+
+  // New properties
+  gender: string;
+  role: string;
 }
 
 export interface UserLoginDto {

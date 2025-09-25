@@ -3,7 +3,7 @@
   <div class="header">
     <div class="header-content">
       <h1 class="page-title">Users Management</h1>
-      <p class="page-subtitle">Manage doctors, patients, and administrators</p>
+      <p class="page-subtitle">Manage doctors and patients</p>
     </div>
     <button class="add-user-btn" (click)="openAddModal()" [disabled]="isLoading">
       <i class="icon">person_add</i>
@@ -40,7 +40,6 @@
     <div class="role-filter">
       <select [(ngModel)]="selectedRole" (change)="filterUsers()" [disabled]="isLoading">
         <option value="all">All Roles</option>
-        <option value="admin">Admin</option>
         <option value="doctor">Doctor</option>
         <option value="patient">Patient</option>
       </select>
@@ -52,8 +51,7 @@
     <div class="table-header">
       <div class="header-cell">User</div>
       <div class="header-cell">Role</div>
-      <div class="header-cell">Status</div>
-      <div class="header-cell">Last Login</div>
+      <div class="header-cell">Details</div>
       <div class="header-cell">Actions</div>
     </div>
 
@@ -66,7 +64,7 @@
           <div class="user-details">
             <div class="user-name">{{ user.name }}</div>
             <div class="user-email">{{ user.email }}</div>
-            <div class="user-phone" *ngIf="user.phoneNumber">{{ user.phoneNumber }}</div>
+            <div class="user-phone">{{ user.phoneNumber }}</div>
           </div>
         </div>
 
@@ -77,24 +75,39 @@
         </div>
 
         <div class="table-cell">
-          <span class="status-badge" [style.background-color]="getStatusColor(user.status)">
-            {{ user.status | titlecase }}
-          </span>
-        </div>
-
-        <div class="table-cell">
-          <span class="last-login">{{ user.lastLogin }}</span>
+          <div class="user-specific-info">
+            <!-- Doctor specific info -->
+            <div *ngIf="user.role === 'doctor'">
+              <div class="info-item">
+                <strong>Specialization:</strong> {{ user.specialization }}
+              </div>
+              <div class="info-item" *ngIf="user.clinicName">
+                <strong>Clinic:</strong> {{ user.clinicName }}
+              </div>
+              <div class="info-item" *ngIf="user.consultationFee">
+                <strong>Fee:</strong> ${{ user.consultationFee }}
+              </div>
+            </div>
+            <!-- Patient specific info -->
+            <div *ngIf="user.role === 'patient'">
+              <div class="info-item" *ngIf="user.bloodType">
+                <strong>Blood Type:</strong> {{ user.bloodType }}
+              </div>
+              <div class="info-item" *ngIf="user.gender">
+                <strong>Gender:</strong> {{ user.gender }}
+              </div>
+              <div class="info-item" *ngIf="user.emergencyContactName">
+                <strong>Emergency Contact:</strong> {{ user.emergencyContactName }}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="table-cell actions">
           <button class="action-btn edit" (click)="openEditModal(user)" title="Edit" [disabled]="isLoading">
             <i class="icon">edit</i>
           </button>
-          <button class="action-btn toggle" (click)="toggleUserStatus(user)"
-                  [title]="user.status === 'active' ? 'Deactivate' : 'Activate'"
-                  [disabled]="isLoading">
-            <i class="icon">{{ user.status === 'active' ? 'block' : 'check_circle' }}</i>
-          </button>
+
           <button class="action-btn delete" (click)="deleteUser(user)" title="Delete" [disabled]="isLoading">
             <i class="icon">delete</i>
           </button>
@@ -127,6 +140,16 @@
           <span>{{ error }}</span>
         </div>
 
+        <!-- Role Selection -->
+        <div class="form-group">
+          <label for="new-role">User Role</label>
+          <select id="new-role" [(ngModel)]="newUser.role" (change)="onRoleChange()" [disabled]="isLoading">
+            <option value="patient">Patient</option>
+            <option value="doctor">Doctor</option>
+          </select>
+        </div>
+
+        <!-- Common Fields -->
         <div class="form-row">
           <div class="form-group">
             <label for="new-firstName">First Name</label>
@@ -169,40 +192,175 @@
             [disabled]="isLoading">
         </div>
 
-        <div class="form-group">
-          <label for="new-phone">Phone Number</label>
-          <input
-            id="new-phone"
-            type="tel"
-            [(ngModel)]="newUser.phoneNumber"
-            placeholder="Enter phone number"
-            [disabled]="isLoading">
-        </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label for="new-role">Role</label>
-            <select id="new-role" [(ngModel)]="newUser.role" [disabled]="isLoading">
-              <option *ngFor="let option of roleOptions" [value]="option.value">
+            <label for="new-phone">Phone Number</label>
+            <input
+              id="new-phone"
+              type="tel"
+              [(ngModel)]="newUser.phoneNumber"
+              placeholder="Enter phone number"
+              [disabled]="isLoading">
+          </div>
+
+          <div class="form-group">
+            <label for="new-address">Address</label>
+            <input
+              id="new-address"
+              type="text"
+              [(ngModel)]="newUser.address"
+              placeholder="Enter address"
+              [disabled]="isLoading">
+          </div>
+        </div>
+
+        <!-- Doctor Specific Fields -->
+        <div *ngIf="newUser.role === 'doctor'" class="role-specific-section">
+          <h3 class="section-title">Doctor Information</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-specialization">Specialization</label>
+              <input
+                id="new-specialization"
+                type="text"
+                [(ngModel)]="newUser.specialization"
+                placeholder="Enter specialization"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label for="new-license">License Number</label>
+              <input
+                id="new-license"
+                type="text"
+                [(ngModel)]="newUser.licenseNumber"
+                placeholder="Enter license number"
+                [disabled]="isLoading">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-experience">Experience (Years)</label>
+              <input
+                id="new-experience"
+                type="number"
+                [(ngModel)]="newUser.experienceYears"
+                placeholder="Enter years of experience"
+                [disabled]="isLoading"
+                min="0">
+            </div>
+
+            <div class="form-group">
+              <label for="new-clinic">Clinic Name</label>
+              <input
+                id="new-clinic"
+                type="text"
+                [(ngModel)]="newUser.clinicName"
+                placeholder="Enter clinic name"
+                [disabled]="isLoading">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="new-consultation-fee">Consultation Fee ($)</label>
+            <input
+              id="new-consultation-fee"
+              type="number"
+              [(ngModel)]="newUser.consultationFee"
+              placeholder="Enter consultation fee"
+              [disabled]="isLoading"
+              min="0"
+              step="0.01">
+          </div>
+        </div>
+
+        <!-- Patient Specific Fields -->
+        <div *ngIf="newUser.role === 'patient'" class="role-specific-section">
+          <h3 class="section-title">Patient Information</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-dob">Date of Birth</label>
+              <input
+                id="new-dob"
+                type="date"
+                [(ngModel)]="newUser.dateOfBirth"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label for="new-gender">Gender</label>
+              <select id="new-gender" [(ngModel)]="newUser.gender" [disabled]="isLoading">
+                <option value="" disabled selected>Select gender</option>
+                <option *ngFor="let option of genderOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="new-blood-type">Blood Type</label>
+            <select id="new-blood-type" [(ngModel)]="newUser.bloodType" [disabled]="isLoading">
+              <option value="" disabled selected>Select blood type</option>
+              <option *ngFor="let option of bloodTypeOptions" [value]="option.value">
                 {{ option.label }}
               </option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="new-status">Status</label>
-            <select id="new-status" [(ngModel)]="newUser.status" [disabled]="isLoading">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <label for="new-allergies">Allergies</label>
+            <textarea
+              id="new-allergies"
+              [(ngModel)]="newUser.allergies"
+              placeholder="Enter any allergies"
+              [disabled]="isLoading"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="new-chronic">Chronic Conditions</label>
+            <textarea
+              id="new-chronic"
+              [(ngModel)]="newUser.chronicConditions"
+              placeholder="Enter any chronic conditions"
+              [disabled]="isLoading"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-emergency-name">Emergency Contact Name</label>
+              <input
+                id="new-emergency-name"
+                type="text"
+                [(ngModel)]="newUser.emergencyContactName"
+                placeholder="Enter emergency contact name"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label for="new-emergency-phone">Emergency Contact Phone</label>
+              <input
+                id="new-emergency-phone"
+                type="tel"
+                [(ngModel)]="newUser.emergencyContactPhone"
+                placeholder="Enter emergency contact phone"
+                [disabled]="isLoading">
+            </div>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn secondary" (click)="closeAddModal()" [disabled]="isLoading">Cancel</button>
+        <button class="btn secondary" (click)="closeAddModal()" [disabled]="isLoading">
+          Cancel
+        </button>
         <button class="btn primary" (click)="addUser()" [disabled]="isLoading">
-          <span *ngIf="!isLoading">Add User</span>
+          <span *ngIf="!isLoading">Add {{ newUser.role | titlecase }}</span>
           <span *ngIf="isLoading">Adding...</span>
         </button>
       </div>
@@ -213,18 +371,30 @@
   <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Edit User</h2>
+        <h2>Edit {{ selectedUser?.role | titlecase }}</h2>
         <button class="close-btn" (click)="closeEditModal()">
           <i class="icon">close</i>
         </button>
       </div>
 
       <div class="modal-body" *ngIf="selectedUser">
+        <!-- Error message -->
         <div class="error-message" *ngIf="error">
           <i class="icon">error</i>
           <span>{{ error }}</span>
         </div>
 
+        <!-- Role Display (Non-editable) -->
+        <div class="form-group">
+          <label>Role</label>
+          <div class="role-display">
+            <span class="role-badge" [style.background-color]="getRoleColor(selectedUser.role)">
+              {{ selectedUser.role | titlecase }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Common Fields -->
         <div class="form-group">
           <label for="edit-name">Full Name</label>
           <input
@@ -255,30 +425,171 @@
             [disabled]="isLoading">
         </div>
 
-        <div class="form-row">
+        <div class="form-group">
+          <label for="edit-address">Address</label>
+          <input
+            id="edit-address"
+            type="text"
+            [(ngModel)]="selectedUser.address"
+            placeholder="Enter address"
+            [disabled]="isLoading">
+        </div>
+
+        <!-- Doctor Specific Fields -->
+        <div *ngIf="selectedUser.role === 'doctor'" class="role-specific-section">
+          <h3 class="section-title">Doctor Information</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-specialization">Specialization</label>
+              <input
+                id="edit-specialization"
+                type="text"
+                [(ngModel)]="selectedUser.specialization"
+                placeholder="Enter specialization"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-license">License Number</label>
+              <input
+                id="edit-license"
+                type="text"
+                [(ngModel)]="selectedUser.licenseNumber"
+                placeholder="Enter license number"
+                [disabled]="isLoading">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-experience">Experience (Years)</label>
+              <input
+                id="edit-experience"
+                type="number"
+                [(ngModel)]="selectedUser.experienceYears"
+                placeholder="Enter years of experience"
+                [disabled]="isLoading"
+                min="0">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-clinic">Clinic Name</label>
+              <input
+                id="edit-clinic"
+                type="text"
+                [(ngModel)]="selectedUser.clinicName"
+                placeholder="Enter clinic name"
+                [disabled]="isLoading">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-consultation-fee">Consultation Fee ($)</label>
+              <input
+                id="edit-consultation-fee"
+                type="number"
+                [(ngModel)]="selectedUser.consultationFee"
+                placeholder="Enter consultation fee"
+                [disabled]="isLoading"
+                min="0"
+                step="0.01">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-availability">Availability Status</label>
+              <select id="edit-availability" [(ngModel)]="selectedUser.availabilityStatus" [disabled]="isLoading">
+                <option *ngFor="let option of availabilityStatusOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Specific Fields -->
+        <div *ngIf="selectedUser.role === 'patient'" class="role-specific-section">
+          <h3 class="section-title">Patient Information</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-dob">Date of Birth</label>
+              <input
+                id="edit-dob"
+                type="date"
+                [(ngModel)]="selectedUser.dateOfBirth"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-gender">Gender</label>
+              <select id="edit-gender" [(ngModel)]="selectedUser.gender" [disabled]="isLoading">
+                <option *ngFor="let option of genderOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group">
-            <label for="edit-role">Role</label>
-            <select id="edit-role" [(ngModel)]="selectedUser.role" [disabled]="isLoading">
-              <option value="patient">Patient</option>
-              <option value="doctor">Doctor</option>
-              <option value="admin">Admin</option>
+            <label for="edit-blood-type">Blood Type</label>
+            <select id="edit-blood-type" [(ngModel)]="selectedUser.bloodType" [disabled]="isLoading">
+              <option *ngFor="let option of bloodTypeOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="edit-status">Status</label>
-            <select id="edit-status" [(ngModel)]="selectedUser.status" [disabled]="isLoading">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <label for="edit-allergies">Allergies</label>
+            <textarea
+              id="edit-allergies"
+              [(ngModel)]="selectedUser.allergies"
+              placeholder="Enter any allergies"
+              [disabled]="isLoading"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-chronic">Chronic Conditions</label>
+            <textarea
+              id="edit-chronic"
+              [(ngModel)]="selectedUser.chronicConditions"
+              placeholder="Enter any chronic conditions"
+              [disabled]="isLoading"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-emergency-name">Emergency Contact Name</label>
+              <input
+                id="edit-emergency-name"
+                type="text"
+                [(ngModel)]="selectedUser.emergencyContactName"
+                placeholder="Enter emergency contact name"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-emergency-phone">Emergency Contact Phone</label>
+              <input
+                id="edit-emergency-phone"
+                type="tel"
+                [(ngModel)]="selectedUser.emergencyContactPhone"
+                placeholder="Enter emergency contact phone"
+                [disabled]="isLoading">
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Modal Footer -->
       <div class="modal-footer">
         <button class="btn secondary" (click)="closeEditModal()" [disabled]="isLoading">Cancel</button>
         <button class="btn primary" (click)="updateUser()" [disabled]="isLoading">
-          <span *ngIf="!isLoading">Update User</span>
+          <span *ngIf="!isLoading">Update {{ selectedUser?.role| titlecase }}</span>
           <span *ngIf="isLoading">Updating...</span>
         </button>
       </div>

@@ -12,11 +12,13 @@ import { UserRegisterDto } from '../../../core/models/user.models';
 })
 export class RegisterComponent {
   registerData: UserRegisterDto = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    phoneNumber: ''
+      firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  phoneNumber: '',
+  gender: '',
+  role: ''
   };
 
   constructor(private usersService: UsersService, private router: Router) {}

@@ -1,22 +1,37 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { UsersService } from '../../../core/services/users.service';
-import { UserDto, UserRegisterDto } from '../../../core/models/user.models';
-import { Role, Gender } from '../../../core/models/enums';
+import { DoctorDto, CreateDoctorDto, UpdateDoctorDto } from '../../../core/models/doctor.models';
+import { PatientDto, CreatePatientDto, UpdatePatientDto } from '../../../core/models/patient.models';
+import { Role, Gender, AvailabilityStatus } from '../../../core/models/enums';
 
-interface User {
+interface UnifiedUser {
   id: number;
   name: string;
   email: string;
-  role: 'patient' | 'doctor' | 'admin';
-  status: 'active' | 'inactive';
-  lastLogin: string;
-  createdAt: string;
-  phoneNumber?: string;
+  role: 'patient' | 'doctor';
+  phoneNumber: string;
+  createdAt?: string;
+  
+  // Doctor specific fields
+  specialization?: string;
+  licenseNumber?: string;
+  experienceYears?: number;
+  clinicName?: string;
+  consultationFee?: number;
+  availabilityStatus?: AvailabilityStatus;
+  address?: string;
+  
+  // Patient specific fields
   dateOfBirth?: Date;
-  gender?: Gender;
+  gender?: string;
+  bloodType?: string;
+  allergies?: string;
+  chronicConditions?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 
 @Component({
@@ -27,25 +42,43 @@ interface User {
   styleUrl: './users-management.component.css'
 })
 export class UsersManagementComponent implements OnInit, OnDestroy {
-  users: User[] = [];
-  filteredUsers: User[] = [];
+  users: UnifiedUser[] = [];
+  filteredUsers: UnifiedUser[] = [];
   searchTerm = '';
   selectedRole: string = 'all';
   showAddModal = false;
   showEditModal = false;
-  selectedUser: User | null = null;
+  selectedUser: UnifiedUser | null = null;
   isLoading = false;
   error: string | null = null;
 
-  newUser: Partial<UserRegisterDto & { role: Role; status: 'active' | 'inactive' }> = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    phoneNumber: '',
-    role: Role.Patient,
-    status: 'active'
-  };
+  // Form for creating new users
+  newUser: {
+    role: 'patient' | 'doctor';
+    // Common fields
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    
+    // Doctor fields
+    specialization?: string;
+    licenseNumber?: string;
+    experienceYears?: number;
+    clinicName?: string;
+    consultationFee?: number;
+    address?: string;
+    
+    // Patient fields
+    dateOfBirth?: Date;
+    gender?: string;
+    bloodType?: string;
+    allergies?: string;
+    chronicConditions?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+  } = this.getEmptyNewUser();
 
   private destroy$ = new Subject<void>();
 
@@ -60,63 +93,91 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  private getEmptyNewUser() {
+    return {
+      role: 'patient' as 'patient' | 'doctor',
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      phoneNumber: '',
+      specialization: '',
+      licenseNumber: '',
+      experienceYears: undefined,
+      clinicName: '',
+      consultationFee: undefined,
+      address: '',
+      dateOfBirth: undefined,
+      gender: '',
+      bloodType: '',
+      allergies: '',
+      chronicConditions: '',
+      emergencyContactName: '',
+      emergencyContactPhone: ''
+    };
+  }
+
   loadUsers() {
     this.isLoading = true;
     this.error = null;
 
-    this.usersService.getAllUsers()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (users: UserDto[]) => {
-          this.users = this.mapUserDtoToUser(users);
-          this.filteredUsers = [...this.users];
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error loading users:', error);
-          this.error = 'Failed to load users. Please try again.';
-          this.isLoading = false;
-        }
-      });
+    // Load both doctors and patients
+    forkJoin({
+      doctors: this.usersService.getAllDoctors(),
+      patients: this.usersService.getAllPatients()
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (result) => {
+        const doctors = this.mapDoctorsToUnifiedUsers(result.doctors);
+        const patients = this.mapPatientsToUnifiedUsers(result.patients);
+        
+        this.users = [...doctors, ...patients];
+        this.filteredUsers = [...this.users];
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+        this.error = 'Failed to load users. Please try again.';
+        this.isLoading = false;
+      }
+    });
   }
 
-  private mapUserDtoToUser(userDtos: UserDto[]): User[] {
-    return userDtos.map(dto => ({
-      id: dto.userId,
-      name: `${dto.firstName} ${dto.lastName}`.trim(),
-      email: dto.email,
-      role: this.mapRoleToString(dto.role),
-      status: 'active' as 'active' | 'inactive', // Default to active since API doesn't have status
-      lastLogin: 'N/A', // API doesn't provide this info
-      createdAt: new Date().toISOString().split('T')[0], // Default to today
-      phoneNumber: dto.phoneNumber,
-      dateOfBirth: dto.dateOfBirth,
-      gender: dto.gender
+  private mapDoctorsToUnifiedUsers(doctors: DoctorDto[]): UnifiedUser[] {
+    return doctors.map(doctor => ({
+      id: doctor.userId,
+      name: doctor.fullName,
+      email: doctor.email,
+      role: 'doctor' as const,
+      phoneNumber: doctor.phoneNumber,
+      specialization: doctor.specialization,
+      licenseNumber: doctor.licenseNumber,
+      experienceYears: doctor.experienceYears,
+      clinicName: doctor.clinicName,
+      consultationFee: doctor.consultationFee,
+      availabilityStatus: doctor.availabilityStatus,
+      createdAt: new Date().toISOString().split('T')[0]
     }));
   }
 
-  private mapRoleToString(role: Role): 'patient' | 'doctor' | 'admin' {
-    switch (role) {
-      case Role.Doctor:
-        return 'doctor';
-      case Role.Admin:
-        return 'admin';
-      case Role.Patient:
-      default:
-        return 'patient';
-    }
-  }
-
-  private mapStringToRole(roleString: string): Role {
-    switch (roleString) {
-      case 'doctor':
-        return Role.Doctor;
-      case 'admin':
-        return Role.Admin;
-      case 'patient':
-      default:
-        return Role.Patient;
-    }
+  private mapPatientsToUnifiedUsers(patients: PatientDto[]): UnifiedUser[] {
+    return patients.map(patient => ({
+      id: patient.userId,
+      name: patient.fullName,
+      email: patient.email,
+      role: 'patient' as const,
+      phoneNumber: patient.phoneNumber,
+      dateOfBirth: patient.dateOfBirth,
+      gender: patient.gender,
+      address: patient.address,
+      bloodType: patient.bloodType,
+      allergies: patient.allergies,
+      chronicConditions: patient.chronicConditions,
+      emergencyContactName: patient.emergencyContactName,
+      emergencyContactPhone: patient.emergencyContactPhone,
+      createdAt: patient.createdAt ? new Date(patient.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    }));
   }
 
   filterUsers() {
@@ -129,15 +190,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
   }
 
   openAddModal() {
-    this.newUser = {
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      phoneNumber: '',
-      role: Role.Patient,
-      status: 'active'
-    };
+    this.newUser = this.getEmptyNewUser();
     this.showAddModal = true;
   }
 
@@ -146,7 +199,7 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
-  openEditModal(user: User) {
+  openEditModal(user: UnifiedUser) {
     this.selectedUser = { ...user };
     this.showEditModal = true;
   }
@@ -157,6 +210,20 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
+  onRoleChange() {
+    // Reset form when role changes
+    const currentRole = this.newUser.role;
+    const commonFields = {
+      firstName: this.newUser.firstName,
+      lastName: this.newUser.lastName,
+      email: this.newUser.email,
+      password: this.newUser.password,
+      phoneNumber: this.newUser.phoneNumber
+    };
+    
+    this.newUser = { ...this.getEmptyNewUser(), ...commonFields, role: currentRole };
+  }
+
   addUser() {
     if (!this.validateNewUser()) {
       return;
@@ -165,27 +232,76 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = null;
 
-    const userRegisterDto: UserRegisterDto = {
-      firstName: this.newUser.firstName!,
-      lastName: this.newUser.lastName!,
-      email: this.newUser.email!,
-      password: this.newUser.password!,
-      phoneNumber: this.newUser.phoneNumber!
+    if (this.newUser.role === 'doctor') {
+      this.addDoctor();
+    } else {
+      this.addPatient();
+    }
+  }
+
+  private addDoctor() {
+    const createDoctorDto: CreateDoctorDto = {
+      firstName: this.newUser.firstName,
+      lastName: this.newUser.lastName,
+      email: this.newUser.email,
+      password: this.newUser.password,
+      phoneNumber: this.newUser.phoneNumber,
+      address: this.newUser.address || '',
+      specialization: this.newUser.specialization || '',
+      licenseNumber: this.newUser.licenseNumber || '',
+      experienceYears: this.newUser.experienceYears,
+      clinicName: this.newUser.clinicName || '',
+      consultationFee: this.newUser.consultationFee
     };
 
-    this.usersService.createUser(userRegisterDto)
+    this.usersService.registerDoctor(createDoctorDto)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (createdUser: UserDto) => {
-          const newUser = this.mapUserDtoToUser([createdUser])[0];
+        next: (createdDoctor: DoctorDto) => {
+          const newUser = this.mapDoctorsToUnifiedUsers([createdDoctor])[0];
           this.users.push(newUser);
           this.filterUsers();
           this.closeAddModal();
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error creating user:', error);
-          this.error = error.error?.message || 'Failed to create user. Please try again.';
+          console.error('Error creating doctor:', error);
+          this.error = error.error?.message || 'Failed to create doctor. Please try again.';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  private addPatient() {
+    const createPatientDto: CreatePatientDto = {
+      firstName: this.newUser.firstName,
+      lastName: this.newUser.lastName,
+      email: this.newUser.email,
+      password: this.newUser.password,
+      phoneNumber: this.newUser.phoneNumber,
+      dateOfBirth: this.newUser.dateOfBirth,
+      gender: this.newUser.gender || '',
+      address: this.newUser.address || '',
+      bloodType: this.newUser.bloodType || '',
+      allergies: this.newUser.allergies || '',
+      chronicConditions: this.newUser.chronicConditions || '',
+      emergencyContactName: this.newUser.emergencyContactName || '',
+      emergencyContactPhone: this.newUser.emergencyContactPhone || ''
+    };
+
+    this.usersService.registerPatient(createPatientDto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (createdPatient: PatientDto) => {
+          const newUser = this.mapPatientsToUnifiedUsers([createdPatient])[0];
+          this.users.push(newUser);
+          this.filterUsers();
+          this.closeAddModal();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error creating patient:', error);
+          this.error = error.error?.message || 'Failed to create patient. Please try again.';
           this.isLoading = false;
         }
       });
@@ -199,42 +315,82 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = null;
 
-    const nameParts = this.selectedUser.name.trim().split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
+    if (this.selectedUser.role === 'doctor') {
+      this.updateDoctor();
+    } else {
+      this.updatePatient();
+    }
+  }
 
-    const userDto: UserDto = {
-      userId: this.selectedUser.id,
-      firstName,
-      lastName,
-      email: this.selectedUser.email,
-      phoneNumber: this.selectedUser.phoneNumber || '',
-      role: this.mapStringToRole(this.selectedUser.role),
-      dateOfBirth: this.selectedUser.dateOfBirth,
-      gender: this.selectedUser.gender
+  private updateDoctor() {
+    if (!this.selectedUser) return;
+
+    const updateDoctorDto: UpdateDoctorDto = {
+        userId: this.selectedUser.id,
+      phoneNumber: this.selectedUser.phoneNumber,
+      address: this.selectedUser.address || '',
+      specialization: this.selectedUser.specialization || '',
+      licenseNumber: this.selectedUser.licenseNumber || '',
+      experienceYears: this.selectedUser.experienceYears,
+      clinicName: this.selectedUser.clinicName || '',
+      consultationFee: this.selectedUser.consultationFee,
+      availabilityStatus: this.selectedUser.availabilityStatus || AvailabilityStatus.Available
     };
 
-    this.usersService.updateUser(this.selectedUser.id, userDto)
+    this.usersService.updateDoctor(this.selectedUser.id, updateDoctorDto)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (updatedUser: UserDto) => {
+        next: (updatedDoctor: DoctorDto) => {
           const index = this.users.findIndex(u => u.id === this.selectedUser!.id);
           if (index !== -1) {
-            this.users[index] = this.mapUserDtoToUser([updatedUser])[0];
+            this.users[index] = this.mapDoctorsToUnifiedUsers([updatedDoctor])[0];
             this.filterUsers();
             this.closeEditModal();
           }
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error updating user:', error);
-          this.error = error.error?.message || 'Failed to update user. Please try again.';
+          console.error('Error updating doctor:', error);
+          this.error = error.error?.message || 'Failed to update doctor. Please try again.';
           this.isLoading = false;
         }
       });
   }
 
-  deleteUser(user: User) {
+  private updatePatient() {
+    if (!this.selectedUser) return;
+
+    const updatePatientDto: UpdatePatientDto = {
+      phoneNumber: this.selectedUser.phoneNumber,
+      address: this.selectedUser.address || '',
+      bloodType: this.selectedUser.bloodType || '',
+      allergies: this.selectedUser.allergies || '',
+      chronicConditions: this.selectedUser.chronicConditions || '',
+      emergencyContactName: this.selectedUser.emergencyContactName || '',
+      emergencyContactPhone: this.selectedUser.emergencyContactPhone || ''
+    };
+
+    this.usersService.updatePatient(this.selectedUser.id, updatePatientDto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedPatient: PatientDto) => {
+          const index = this.users.findIndex(u => u.id === this.selectedUser!.id);
+          if (index !== -1) {
+            this.users[index] = this.mapPatientsToUnifiedUsers([updatedPatient])[0];
+            this.filterUsers();
+            this.closeEditModal();
+          }
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error updating patient:', error);
+          this.error = error.error?.message || 'Failed to update patient. Please try again.';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  deleteUser(user: UnifiedUser) {
     if (!confirm(`Are you sure you want to delete ${user.name}?`)) {
       return;
     }
@@ -242,7 +398,11 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = null;
 
-    this.usersService.deleteUser(user.id)
+    const deleteObservable = user.role === 'doctor' 
+      ? this.usersService.deleteDoctor(user.id)
+      : this.usersService.deletePatient(user.id);
+
+    deleteObservable
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -256,13 +416,6 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         }
       });
-  }
-
-  toggleUserStatus(user: User) {
-    // Since the API doesn't have a status field, this is a local operation only
-    // In a real application, you might want to implement this on the server side
-    user.status = user.status === 'active' ? 'inactive' : 'active';
-    this.filterUsers();
   }
 
   private validateNewUser(): boolean {
@@ -286,6 +439,32 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       this.error = 'Phone number is required.';
       return false;
     }
+
+    // Role-specific validation
+    if (this.newUser.role === 'doctor') {
+      if (!this.newUser.specialization?.trim()) {
+        this.error = 'Specialization is required for doctors.';
+        return false;
+      }
+      if (!this.newUser.licenseNumber?.trim()) {
+        this.error = 'License number is required for doctors.';
+        return false;
+      }
+      if (!this.newUser.clinicName?.trim()) {
+        this.error = 'Clinic name is required for doctors.';
+        return false;
+      }
+    } else if (this.newUser.role === 'patient') {
+      if (!this.newUser.gender?.trim()) {
+        this.error = 'Gender is required for patients.';
+        return false;
+      }
+      if (!this.newUser.bloodType?.trim()) {
+        this.error = 'Blood type is required for patients.';
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -298,28 +477,49 @@ export class UsersManagementComponent implements OnInit, OnDestroy {
       this.error = 'Email is required.';
       return false;
     }
+    if (!this.selectedUser?.phoneNumber?.trim()) {
+      this.error = 'Phone number is required.';
+      return false;
+    }
+
     return true;
   }
 
   getRoleColor(role: string): string {
     switch (role) {
       case 'doctor': return '#4facfe';
-      case 'admin': return '#fa709a';
       case 'patient': return '#43e97b';
       default: return '#6c757d';
     }
   }
 
-  getStatusColor(status: string): string {
-    return status === 'active' ? '#28a745' : '#dc3545';
+  // Utility getters for template
+  get genderOptions() {
+    return [
+      { value: 'Male', label: 'Male' },
+      { value: 'Female', label: 'Female' },
+      { value: 'Other', label: 'Other' }
+    ];
   }
 
-  // Utility method to get Role enum values for the template
-  get roleOptions() {
+  get bloodTypeOptions() {
     return [
-      { value: Role.Patient, label: 'Patient' },
-      { value: Role.Doctor, label: 'Doctor' },
-      { value: Role.Admin, label: 'Admin' }
+      { value: 'A+', label: 'A+' },
+      { value: 'A-', label: 'A-' },
+      { value: 'B+', label: 'B+' },
+      { value: 'B-', label: 'B-' },
+      { value: 'AB+', label: 'AB+' },
+      { value: 'AB-', label: 'AB-' },
+      { value: 'O+', label: 'O+' },
+      { value: 'O-', label: 'O-' }
+    ];
+  }
+
+  get availabilityStatusOptions() {
+    return [
+      { value: AvailabilityStatus.Available, label: 'Available' },
+      { value: AvailabilityStatus.Busy, label: 'Busy' },
+      { value: AvailabilityStatus.Unavailable, label: 'Unavailable' }
     ];
   }
 }
