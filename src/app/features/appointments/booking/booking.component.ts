@@ -1,17 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface Doctor {
-  id: number;
-  name: string;
-  specialty: string;
-  location: string;
-}
+import { finalize } from 'rxjs/operators';
+import { DoctorsService } from '../../../core/services/doctors.service';
+import { DoctorAvailabilityService } from '../../../core/services/doctor-availability.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
+import { DoctorDto } from '../../../core/models/doctor.models';
+import { DoctorAvailabilityDto } from '../../../core/models/doctor-availability.models';
+import { AppointmentDto, CreateAppointmentDto } from '../../../core/models/appointment.models';
+import { AuthStorage } from '../../../core/models/user.models';
 
 interface TimeSlot {
   time: string;
   available: boolean;
+  availabilityId?: number;
 }
 
 @Component({
@@ -19,7 +21,7 @@ interface TimeSlot {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="booking">
+    <div class="booking" *ngIf="!isLoading(); else loading">
       <div class="header">
         <div class="header-content">
           <h1 class="page-title">Book an Appointment</h1>
@@ -41,7 +43,7 @@ interface TimeSlot {
           <label>Doctor</label>
           <select [(ngModel)]="selectedDoctorId" (change)="onDoctorChange()">
             <option [ngValue]="null">Select a doctor</option>
-            <option *ngFor="let d of filteredDoctors" [ngValue]="d.id">{{ d.name }} ({{ d.specialty }})</option>
+            <option *ngFor="let d of filteredDoctors" [ngValue]="d.userId">{{ d.fullName }} ({{ d.specialization }})</option>
           </select>
         </div>
 
@@ -59,11 +61,11 @@ interface TimeSlot {
             <span class="badge">{{ filteredDoctors.length }}</span>
           </div>
           <div class="doctor-list">
-            <div class="doctor-item" *ngFor="let d of filteredDoctors" [class.active]="d.id === selectedDoctorId" (click)="selectDoctor(d)">
-              <div class="avatar">{{ d.name.charAt(0) }}</div>
+            <div class="doctor-item" *ngFor="let d of filteredDoctors" [class.active]="d.userId === selectedDoctorId" (click)="selectDoctor(d)">
+              <div class="avatar">{{ d.fullName.charAt(0) }}</div>
               <div class="meta">
-                <div class="name">{{ d.name }}</div>
-                <div class="sub">{{ d.specialty }} • {{ d.location }}</div>
+                <div class="name">{{ d.fullName }}</div>
+                <div class="sub">{{ d.specialization }} • {{ d.clinicName }}</div>
               </div>
               <i class="icon">chevron_right</i>
             </div>
@@ -80,7 +82,7 @@ interface TimeSlot {
         <div class="card slots">
           <div class="card-header">
             <h2>Available Time Slots</h2>
-            <span class="hint" *ngIf="selectedDoctorId && selectedDate">For {{ getSelectedDoctor()?.name }} on {{ selectedDate | date:'fullDate' }}</span>
+            <span class="hint" *ngIf="selectedDoctorId && selectedDate">For {{ getSelectedDoctor()?.fullName }} on {{ selectedDate | date:'fullDate' }}</span>
           </div>
 
           <div class="slots-grid">
@@ -128,6 +130,16 @@ interface TimeSlot {
         </div>
       </div>
 
+      <!-- Error banner -->
+      <div class="toast error" *ngIf="error">
+        <i class="icon">error</i>
+        <div class="toast-content">
+          <div class="title">Booking failed</div>
+          <div class="sub">{{ error }}</div>
+        </div>
+        <button class="close" (click)="error = null"><i class="icon">close</i></button>
+      </div>
+
       <!-- Confirmation banner -->
       <div class="toast" *ngIf="confirmation">
         <i class="icon">check_circle</i>
@@ -138,8 +150,14 @@ interface TimeSlot {
         <button class="close" (click)="confirmation = null"><i class="icon">close</i></button>
       </div>
     </div>
+    <ng-template #loading>
+      <div class="booking loading-state">
+        <p>Loading booking data...</p>
+      </div>
+    </ng-template>
   `,
-  styles: [`
+  styles: [
+    `
     .booking { padding: 1rem; }
     .header { margin-bottom: 1rem; }
     .page-title { margin: 0; font-weight: 700; font-size: 1.5rem; }
@@ -182,6 +200,8 @@ interface TimeSlot {
     .empty-icon { font-size: 2rem; color: #9ca3af; margin-bottom: 0.5rem; }
 
     .toast { position: fixed; right: 1rem; bottom: 1rem; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; border-radius: 12px; padding: 0.75rem 1rem; display: flex; align-items: start; gap: 0.75rem; max-width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .toast.error { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .toast.error .sub { color: #dc2626; }
     .toast .title { font-weight: 700; }
     .toast .sub { font-size: 0.875rem; color: #047857; }
     .toast .close { background: transparent; border: none; color: inherit; cursor: pointer; }
@@ -191,17 +211,18 @@ interface TimeSlot {
     }
   `]
 })
-export class BookingComponent {
-  specialties: string[] = ['General Medicine', 'Cardiology', 'Dermatology', 'Pediatrics'];
+export class BookingComponent implements OnInit {
+  private readonly doctorsService = inject(DoctorsService);
+  private readonly availabilityService = inject(DoctorAvailabilityService);
+  private readonly appointmentService = inject(AppointmentService);
 
-  doctors: Doctor[] = [
-    { id: 1, name: 'Dr. Alice Martin', specialty: 'General Medicine', location: 'Central Clinic' },
-    { id: 2, name: 'Dr. Bruno Keller', specialty: 'Cardiology', location: 'Heart Center' },
-    { id: 3, name: 'Dr. Claire Dubois', specialty: 'Dermatology', location: 'Skin Care Institute' },
-    { id: 4, name: 'Dr. David Rossi', specialty: 'Pediatrics', location: 'Children Hospital' },
-  ];
+  private readonly loadingSignal = signal<boolean>(false);
 
-  filteredDoctors: Doctor[] = [...this.doctors];
+  readonly isLoading = computed(() => this.loadingSignal());
+
+  doctors: DoctorDto[] = [];
+  filteredDoctors: DoctorDto[] = [];
+  specialties: string[] = [];
 
   selectedSpecialty: string = '';
   selectedDoctorId: number | null = null;
@@ -214,14 +235,19 @@ export class BookingComponent {
   notes = '';
 
   confirmation: { doctor: string; date: string; time: string } | null = null;
+  error: string | null = null;
+
+  ngOnInit(): void {
+    this.fetchDoctors();
+  }
 
   onSpecialtyChange() {
     this.filteredDoctors = this.selectedSpecialty
-      ? this.doctors.filter(d => d.specialty === this.selectedSpecialty)
+      ? this.doctors.filter(d => d.specialization === this.selectedSpecialty)
       : [...this.doctors];
 
     // Reset selection if current doctor not in filtered list
-    if (!this.filteredDoctors.find(d => d.id === this.selectedDoctorId)) {
+    if (!this.filteredDoctors.find(d => d.userId === this.selectedDoctorId)) {
       this.selectedDoctorId = null;
       this.timeSlots = [];
       this.selectedTime = null;
@@ -232,8 +258,8 @@ export class BookingComponent {
     this.loadTimeSlots();
   }
 
-  selectDoctor(d: Doctor) {
-    this.selectedDoctorId = d.id;
+  selectDoctor(d: DoctorDto) {
+    this.selectedDoctorId = d.userId;
     this.loadTimeSlots();
   }
 
@@ -245,18 +271,21 @@ export class BookingComponent {
       return;
     }
 
-    // Mock slot generation: every 30 minutes between 9:00 and 17:00
-    const slots: TimeSlot[] = [];
-    for (let h = 9; h <= 17; h++) {
-      for (let m of [0, 30]) {
-        const hh = h.toString().padStart(2, '0');
-        const mm = m.toString().padStart(2, '0');
-        const label = `${hh}:${mm}`;
-        const available = Math.random() > 0.2; // 80% available
-        slots.push({ time: label, available });
-      }
-    }
-    this.timeSlots = slots;
+    this.loadingSignal.set(true);
+    this.error = null;
+
+    // Fetch availability for the selected doctor
+    this.availabilityService.getAvailabilityByDoctor(this.selectedDoctorId)
+      .pipe(finalize(() => this.loadingSignal.set(false)))
+      .subscribe({
+        next: (availabilities) => {
+          this.timeSlots = this.mapAvailabilityToSlots(availabilities, this.selectedDate);
+        },
+        error: (err) => {
+          console.error('Failed to load availability', err);
+          this.error = 'Unable to load availability for the selected doctor. Please try again later.';
+        }
+      });
   }
 
   selectTime(time: string) {
@@ -265,21 +294,58 @@ export class BookingComponent {
   }
 
   canBook(): boolean {
-    return !!(this.selectedDoctorId && this.selectedDate && this.selectedTime && this.reason.trim());
+    return !!(this.selectedDoctorId && this.selectedDate && this.selectedTime);
   }
 
   bookAppointment() {
     if (!this.canBook()) return;
-    const doctor = this.getSelectedDoctor()?.name || '';
-    this.confirmation = { doctor, date: this.selectedDate, time: this.selectedTime! };
 
-    // Reset form except filters
-    this.reason = '';
-    this.notes = '';
+    const auth = AuthStorage.get();
+    const patientId = auth?.user?.userId;
+
+    if (!patientId) {
+      this.error = 'Unable to identify the logged-in patient. Please log in again.';
+      return;
+    }
+
+    const appointmentPayload: CreateAppointmentDto = {
+      patientId,
+      doctorId: this.selectedDoctorId!,
+      appointmentDate: new Date(`${this.selectedDate}T${this.selectedTime}:00`)
+    };
+
+    this.loadingSignal.set(true);
+    this.error = null;
+
+    this.appointmentService.scheduleAppointment(appointmentPayload)
+      .pipe(finalize(() => this.loadingSignal.set(false)))
+      .subscribe({
+        next: (appointment: AppointmentDto) => {
+          const doctor = this.getSelectedDoctor()?.fullName || 'Selected doctor';
+          const bookedTime = this.selectedTime!;
+          this.confirmation = {
+            doctor,
+            date: appointment.appointmentDate as unknown as string,
+            time: bookedTime
+          };
+
+          this.reason = '';
+          this.notes = '';
+        },
+        error: (err) => {
+          console.error('Failed to schedule appointment', err);
+
+          if (err?.status === 409 && err?.error?.message) {
+            this.error = err.error.message;
+          } else {
+            this.error = 'Unable to book the appointment. Please try again later.';
+          }
+        }
+      });
   }
 
-  getSelectedDoctor(): Doctor | undefined {
-    return this.doctors.find(d => d.id === this.selectedDoctorId!);
+  getSelectedDoctor(): DoctorDto | undefined {
+    return this.doctors.find(d => d.userId === this.selectedDoctorId!);
   }
 
   reset() {
@@ -292,5 +358,64 @@ export class BookingComponent {
     this.reason = '';
     this.notes = '';
     this.confirmation = null;
+    this.error = null;
+  }
+
+  private fetchDoctors() {
+    this.loadingSignal.set(true);
+    this.error = null;
+
+    this.doctorsService.getAllDoctors()
+      .pipe(finalize(() => this.loadingSignal.set(false)))
+      .subscribe({
+        next: (doctors) => {
+          this.doctors = doctors;
+          this.filteredDoctors = [...doctors];
+          this.specialties = Array.from(new Set(doctors.map(d => d.specialization).filter(Boolean)));
+        },
+        error: (err) => {
+          console.error('Failed to load doctors', err);
+          this.error = 'Unable to load doctors list. Please try again later.';
+        }
+      });
+  }
+
+  private mapAvailabilityToSlots(availabilities: DoctorAvailabilityDto[], targetDate: string): TimeSlot[] {
+    if (!availabilities.length) {
+      return [];
+    }
+
+    const targetDay = new Date(targetDate).toLocaleDateString('en-US', { weekday: 'long' });
+
+    const relevantAvailabilities = availabilities.filter(a => a.dayOfWeek === targetDay);
+
+    const slots: TimeSlot[] = [];
+
+    relevantAvailabilities.forEach(avail => {
+      const start = this.parseTime(avail.startTime);
+      const end = this.parseTime(avail.endTime);
+
+      let current = new Date(start);
+      while (current < end) {
+        const label = current.toTimeString().slice(0, 5);
+
+        slots.push({
+          time: label,
+          available: true,
+          availabilityId: avail.availabilityId
+        });
+
+        current = new Date(current.getTime() + 30 * 60000);
+      }
+    });
+
+    return slots;
+  }
+
+  private parseTime(time: string): Date {
+    const [hours, minutes] = time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
   }
 }

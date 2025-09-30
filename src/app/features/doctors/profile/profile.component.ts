@@ -1,79 +1,92 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { UsersService } from '../../../core/services/users.service';
+import { AuthStorage } from '../../../core/models/user.models';
+import { DoctorDto, UpdateDoctorDto } from '../../../core/models/doctor.models';
+import { AvailabilityStatus } from '../../../core/models/enums';
 
 @Component({
   selector: 'app-doctor-profile',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="profile">
+    <div class="profile" *ngIf="!loading; else loadingTpl">
       <div class="header">
         <h1 class="page-title">My Profile</h1>
         <p class="page-subtitle">Manage your professional information</p>
       </div>
 
-      <div class="grid">
+      <div class="error" *ngIf="error">{{ error }}</div>
+
+      <div class="grid" *ngIf="doctor">
         <div class="card">
           <div class="card-header"><h2>Basic Information</h2></div>
           <div class="form">
             <div class="row two">
               <div>
                 <label>Full Name</label>
-                <input type="text" [(ngModel)]="profile.name" placeholder="Dr. Jane Doe" />
+                <input type="text" [value]="doctor.fullName" disabled />
               </div>
               <div>
                 <label>Email</label>
-                <input type="email" [(ngModel)]="profile.email" placeholder="jane.doe@clinic.com" />
+                <input type="email" [value]="doctor.email" disabled />
               </div>
             </div>
             <div class="row two">
               <div>
                 <label>Phone</label>
-                <input type="text" [(ngModel)]="profile.phone" placeholder="+1 555 123 4567" />
+                <input type="text" [(ngModel)]="form.phoneNumber" />
               </div>
               <div>
-                <label>Location</label>
-                <input type="text" [(ngModel)]="profile.location" placeholder="City, Country" />
+                <label>Clinic / Location</label>
+                <input type="text" [(ngModel)]="form.clinicName" />
               </div>
             </div>
             <div class="row">
-              <label>Biography</label>
-              <textarea rows="3" [(ngModel)]="profile.bio" placeholder="Short professional biography"></textarea>
+              <label>Specialization</label>
+              <input type="text" [(ngModel)]="form.specialization" />
+            </div>
+            <div class="row two">
+              <div>
+                <label>License Number</label>
+                <input type="text" [(ngModel)]="form.licenseNumber" />
+              </div>
+              <div>
+                <label>Experience (years)</label>
+                <input type="number" [(ngModel)]="form.experienceYears" />
+              </div>
+            </div>
+            <div class="row two">
+              <div>
+                <label>Consultation Fee</label>
+                <input type="number" [(ngModel)]="form.consultationFee" />
+              </div>
+              <div>
+                <label>Availability Status</label>
+                <select [(ngModel)]="form.availabilityStatus">
+                  <option *ngFor="let status of availabilityStatuses" [ngValue]="status">{{ status }}</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header"><h2>Specialties & Certifications</h2></div>
+          <div class="card-header"><h2>Biography</h2></div>
           <div class="form">
             <div class="row">
-              <label>Specialties</label>
-              <div class="chips">
-                <span class="chip" *ngFor="let s of profile.specialties; let i = index">
-                  {{ s }} <button class="chip-remove" (click)="removeSpecialty(i)"><i class="icon">close</i></button>
-                </span>
-              </div>
-              <div class="add-chip">
-                <input type="text" placeholder="Add specialty..." [(ngModel)]="newSpecialty"/>
-                <button class="btn" (click)="addSpecialty()"><i class="icon">add</i><span>Add</span></button>
-              </div>
-            </div>
-
-            <div class="row">
-              <label>Verification</label>
-              <div class="verifications">
-                <span class="badge" [class.verified]="profile.verifiedLicense"><i class="icon">workspace_premium</i> License</span>
-                <span class="badge" [class.verified]="profile.verifiedIdentity"><i class="icon">verified_user</i> Identity</span>
-              </div>
+              <label>About</label>
+              <textarea rows="4" [(ngModel)]="bio"></textarea>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="actions">
-        <button class="btn secondary"><i class="icon">refresh</i><span>Reset</span></button>
-        <button class="btn primary" (click)="save()"><i class="icon">save</i><span>Save Changes</span></button>
+      <div class="actions" *ngIf="doctor">
+        <button class="btn secondary" (click)="reload()"><i class="icon">refresh</i><span>Reload</span></button>
+        <button class="btn primary" (click)="save()" [disabled]="saving"><i class="icon">save</i><span>{{ saving ? 'Saving...' : 'Save Changes' }}</span></button>
       </div>
 
       <div class="toast" *ngIf="saved">
@@ -85,6 +98,10 @@ import { FormsModule } from '@angular/forms';
         <button class="close" (click)="saved = false"><i class="icon">close</i></button>
       </div>
     </div>
+
+    <ng-template #loadingTpl>
+      <div class="loading">Loading profile...</div>
+    </ng-template>
   `,
   styles: [`
     .profile { padding: 1rem; }
@@ -96,18 +113,14 @@ import { FormsModule } from '@angular/forms';
     .form { display: grid; gap: 0.75rem; padding: 0.75rem; }
     .row { display: grid; gap: 0.25rem; }
     .row.two { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-    input, textarea { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.5rem 0.75rem; }
-    .chips { display: flex; gap: 0.375rem; flex-wrap: wrap; }
-    .chip { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 999px; padding: 0.125rem 0.5rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem; }
-    .chip-remove { border: none; background: transparent; cursor: pointer; color: inherit; display: inline-grid; place-items: center; }
-    .add-chip { display: flex; gap: 0.5rem; align-items: center; }
-    .verifications { display: flex; gap: 0.5rem; }
-    .badge { display: inline-flex; align-items: center; gap: 0.375rem; border: 1px dashed #d1d5db; border-radius: 999px; padding: 0.125rem 0.5rem; color: #6b7280; }
-    .badge.verified { border-style: solid; background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+    input, textarea, select { border: 1px solid #d1d5db; border-radius: 8px; padding: 0.5rem 0.75rem; }
 
     .actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
     .btn { display: inline-flex; align-items: center; gap: 0.375rem; border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; padding: 0.375rem 0.75rem; cursor: pointer; }
     .btn.primary { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; border: none; }
+
+    .error { color: #b91c1c; background: #fee2e2; border: 1px solid #fecaca; padding: 0.5rem; border-radius: 8px; margin-top: 0.75rem; }
+    .loading { padding: 1rem; }
 
     .toast { position: fixed; right: 1rem; bottom: 1rem; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; border-radius: 12px; padding: 0.75rem 1rem; display: flex; align-items: start; gap: 0.75rem; max-width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .toast .title { font-weight: 700; }
@@ -117,35 +130,91 @@ import { FormsModule } from '@angular/forms';
     @media (max-width: 1200px) { .grid { grid-template-columns: 1fr; } }
   `]
 })
-export class DoctorProfileComponent {
-  profile = {
-    name: 'Dr. Jane Doe',
-    email: 'jane.doe@clinic.com',
-    phone: '+1 555 123 4567',
-    location: 'Paris, France',
-    bio: 'Experienced cardiologist with a passion for digital health.',
-    specialties: ['Cardiology'],
-    verifiedLicense: true,
-    verifiedIdentity: true
+export class DoctorProfileComponent implements OnInit, OnDestroy {
+  doctor: DoctorDto | null = null;
+  form: UpdateDoctorDto = {
+    userId: 0,
+    phoneNumber: '',
+    address: '',
+    specialization: '',
+    licenseNumber: '',
+    experienceYears: undefined,
+    clinicName: '',
+    consultationFee: undefined,
+    availabilityStatus: AvailabilityStatus.Available
   };
-
-  newSpecialty = '';
+  bio = '';
+  availabilityStatuses = Object.values(AvailabilityStatus);
+  loading = false;
+  saving = false;
   saved = false;
+  error: string | null = null;
+  sub?: Subscription;
+  private readonly doctorId = AuthStorage.get()?.user.userId ?? null;
 
-  addSpecialty() {
-    const s = this.newSpecialty.trim();
-    if (!s) return;
-    if (!this.profile.specialties.includes(s)) {
-      this.profile.specialties.push(s);
+  constructor(private usersService: UsersService) {}
+
+  ngOnInit() {
+    if (this.doctorId) {
+      this.load(this.doctorId);
+    } else {
+      this.error = 'Unable to determine doctor identifier.';
     }
-    this.newSpecialty = '';
   }
 
-  removeSpecialty(i: number) {
-    this.profile.specialties.splice(i, 1);
+  ngOnDestroy() { this.sub?.unsubscribe(); }
+
+  reload() {
+    if (!this.doctorId) { return; }
+    this.load(this.doctorId);
+  }
+
+  load(userId: number) {
+    this.loading = true;
+    this.error = null;
+    this.sub = this.usersService.getDoctorById(userId).subscribe({
+      next: (doctor) => {
+        this.doctor = doctor;
+        this.form = {
+          userId: doctor.userId,
+          phoneNumber: doctor.phoneNumber,
+          address: '',
+          specialization: doctor.specialization,
+          licenseNumber: doctor.licenseNumber,
+          experienceYears: doctor.experienceYears,
+          clinicName: doctor.clinicName,
+          consultationFee: doctor.consultationFee,
+          availabilityStatus: doctor.availabilityStatus
+        };
+        this.bio = doctor.specialization;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Failed to load profile.';
+        this.loading = false;
+        console.error(err);
+      }
+    });
   }
 
   save() {
-    this.saved = true;
+    if (!this.doctor || !this.doctorId) { return; }
+    this.saving = true;
+    const payload: UpdateDoctorDto = {
+      ...this.form,
+      userId: this.doctorId,
+      address: this.form.address
+    };
+    this.usersService.updateDoctor(this.doctorId, payload).subscribe({
+      next: () => {
+        this.saving = false;
+        this.saved = true;
+      },
+      error: (err) => {
+        this.saving = false;
+        this.error = 'Failed to save profile.';
+        console.error(err);
+      }
+    });
   }
 }

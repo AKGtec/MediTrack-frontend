@@ -1,9 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { PatientsService } from '../../../core/services/patients.service';
+import { UsersService } from '../../../core/services/users.service';
+import { AuthStorage } from '../../../core/models/user.models';
 import { PatientDto, UpdatePatientDto } from '../../../core/models/patient.models';
 
 @Component({
@@ -92,7 +92,7 @@ import { PatientDto, UpdatePatientDto } from '../../../core/models/patient.model
       </div>
 
       <div class="actions" *ngIf="patient">
-        <button class="btn secondary" (click)="load(patient.userId)"><i class="icon">refresh</i><span>Reload</span></button>
+        <button class="btn secondary" (click)="reload()"><i class="icon">refresh</i><span>Reload</span></button>
         <button class="btn primary" (click)="save()" [disabled]="saving"><i class="icon">save</i><span>{{ saving ? 'Saving...' : 'Save Changes' }}</span></button>
       </div>
 
@@ -154,21 +154,29 @@ export class PatientProfileComponent implements OnInit, OnDestroy {
   saved = false;
   error: string | null = null;
   sub?: Subscription;
+  private readonly patientId = AuthStorage.get()?.user.userId ?? null;
 
-  constructor(private patientsService: PatientsService, private route: ActivatedRoute) {}
+  constructor(private usersService: UsersService) {}
 
   ngOnInit() {
-    const idParam = this.route.snapshot.queryParamMap.get('id');
-    const id = idParam ? Number(idParam) : 1; // TODO: replace with authenticated patient id
-    this.load(id);
+    if (this.patientId) {
+      this.load(this.patientId);
+    } else {
+      this.error = 'Unable to determine patient identifier.';
+    }
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
+  reload() {
+    if (!this.patientId) { return; }
+    this.load(this.patientId);
+  }
+
   load(id: number) {
     this.loading = true;
     this.error = null;
-    this.sub = this.patientsService.getPatientById(id).subscribe({
+    this.sub = this.usersService.getPatientById(id).subscribe({
       next: (p) => {
         this.patient = p;
         this.form = {
@@ -191,9 +199,9 @@ export class PatientProfileComponent implements OnInit, OnDestroy {
   }
 
   save() {
-    if (!this.patient) return;
+    if (!this.patient || !this.patientId) { return; }
     this.saving = true;
-    this.patientsService.updatePatient(this.patient.userId, this.form).subscribe({
+    this.usersService.updatePatient(this.patientId, this.form).subscribe({
       next: () => {
         this.saving = false;
         this.saved = true;

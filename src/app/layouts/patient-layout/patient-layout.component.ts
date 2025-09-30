@@ -19,10 +19,8 @@ import { RouterModule } from '@angular/router';
         <!-- Brand Section -->
         <div class="brand">
           <div class="logo-container">
-            <div class="logo-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
+            <div class="logo-image">
+              <img src="https://img.freepik.com/premium-vector/medical-center-circle-badge-modern-logo-vector-icon-design-line-style_1183619-140.jpg?semt=ais_hybrid&w=740&q=80" alt="MediTrack logo" />
             </div>
             <div class="brand-text">
               <span class="logo">MediTrack</span>
@@ -155,6 +153,58 @@ import { RouterModule } from '@angular/router';
     </div>
   `,
   styles: [`
+
+
+  .brand { 
+      margin-bottom: 3rem;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logo-image {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+    }
+
+    .logo-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo { 
+      font-weight: 700; 
+      font-size: 1.4rem; 
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .role { 
+      font-size: 0.8rem; 
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
     :host { 
       display: block; 
       height: 100vh; 

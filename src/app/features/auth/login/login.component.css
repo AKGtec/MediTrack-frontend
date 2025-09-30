@@ -170,20 +170,17 @@
 }
 
 .logo {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
-.logo svg {
-  width: 28px;
-  height: 28px;
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .logo-container h1 {

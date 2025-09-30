@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 interface Appointment {
   id: number;
@@ -26,6 +26,7 @@ interface Patient {
   styleUrl: './doctor-dashboard.component.css'
 })
 export class DoctorDashboardComponent implements OnInit {
+  constructor(private router: Router) {}
   todaysAppointments: Appointment[] = [];
   upcomingAppointments: Appointment[] = [];
   recentPatients: Patient[] = [];
@@ -72,20 +73,24 @@ export class DoctorDashboardComponent implements OnInit {
   onStartConsultation(appointmentId: number) {
     console.log('Starting consultation for appointment:', appointmentId);
     // Navigate to consultation page
+    this.router.navigate(['/doctor/doctors/patients']);
   }
 
   onViewPatient(patientId: number) {
     console.log('Viewing patient:', patientId);
     // Navigate to patient details
+    this.router.navigate(['/doctor/doctors/patients']);
   }
 
   onUpdateSchedule() {
     console.log('Updating schedule');
     // Open schedule management
+    this.router.navigate(['/doctor/doctors/schedule']);
   }
 
   onViewAllAppointments() {
     console.log('Viewing all appointments');
     // Navigate to appointments list
+    this.router.navigate(['/doctor/doctors/schedule']);
   }
 }

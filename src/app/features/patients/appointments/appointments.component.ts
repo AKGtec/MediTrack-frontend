@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { AppointmentDto } from '../../../core/models/appointment.models';
 import { AppointmentStatus } from '../../../core/models/enums';
+import { AuthStorage } from '../../../core/models/user.models';
 
 @Component({
   selector: 'app-patient-appointments',
@@ -79,8 +80,14 @@ export class PatientAppointmentsComponent implements OnInit, OnDestroy {
   constructor(private appointmentsService: AppointmentService, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    const idParam = this.route.snapshot.queryParamMap.get('id');
-    const patientId = idParam ? Number(idParam) : 1; // TODO: replace with authenticated patient id
+    const auth = AuthStorage.get();
+    const patientId = auth?.user?.userId;
+
+    if (!patientId) {
+      this.error = 'Unable to identify the logged-in patient. Please log in again.';
+      return;
+    }
+
     this.load(patientId);
   }
 

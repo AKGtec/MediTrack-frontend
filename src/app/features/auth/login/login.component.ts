@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { UsersService } from '../../../core/services/users.service';
-import { UserLoginDto } from '../../../core/models/user.models';
+import { UserLoginDto, AuthStorage } from '../../../core/models/user.models';
 
 export interface NotificationData {
   message: string;
@@ -63,8 +63,8 @@ export class LoginComponent {
         this.isLoading = false;
         this.showNotification('Login successful! Redirecting...', 'success');
         
-        // Store token, navigate to dashboard
-        localStorage.setItem('token', response.token);
+        // Store auth data, navigate to dashboard
+        AuthStorage.save(response);
         
         // Delay navigation to show success message
         setTimeout(() => {
