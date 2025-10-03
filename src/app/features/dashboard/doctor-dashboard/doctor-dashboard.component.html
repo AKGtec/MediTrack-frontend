@@ -5,155 +5,180 @@
     <p class="dashboard-subtitle">Manage your appointments and patient care efficiently.</p>
   </div>
 
-  <!-- Quick Stats -->
-  <div class="stats-overview">
-    <div class="stat-item">
-      <div class="stat-number">{{ stats.todaysAppointments }}</div>
-      <div class="stat-label">Today's Appointments</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number">{{ stats.totalPatients }}</div>
-      <div class="stat-label">Total Patients</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number">{{ stats.pendingPrescriptions }}</div>
-      <div class="stat-label">Pending Prescriptions</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number">{{ stats.completedToday }}</div>
-      <div class="stat-label">Completed Today</div>
-    </div>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading dashboard data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-state">
+    <div class="error-icon">⚠️</div>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="loadDashboardData()">Try Again</button>
   </div>
 
   <!-- Main Content -->
-  <div class="dashboard-content">
-    <!-- Today's Appointments -->
-    <div class="appointments-section">
-      <div class="section-header">
-        <h2>Today's Appointments</h2>
-        <button class="btn-secondary" (click)="onViewAllAppointments()">View All</button>
+  <div *ngIf="!loading && !error">
+    <!-- Quick Stats -->
+    <div class="stats-overview">
+      <div class="stat-item">
+        <div class="stat-number">{{ stats.todaysAppointments }}</div>
+        <div class="stat-label">Today's Appointments</div>
       </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ stats.totalPatients }}</div>
+        <div class="stat-label">Total Patients</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ stats.pendingPrescriptions }}</div>
+        <div class="stat-label">Pending Prescriptions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ stats.completedToday }}</div>
+        <div class="stat-label">Completed Today</div>
+      </div>
+    </div>
 
-      <div class="appointments-list">
-        <div class="appointment-card" *ngFor="let appointment of todaysAppointments"
-             [ngClass]="appointment.status">
-          <div class="appointment-info">
-            <div class="patient-name">{{ appointment.patientName }}</div>
-            <div class="appointment-details">
-              <span class="time">{{ appointment.time }}</span>
-              <span class="type">{{ appointment.type }}</span>
+    <!-- Main Content -->
+    <div class="dashboard-content">
+      <!-- Today's Appointments -->
+      <div class="appointments-section">
+        <div class="section-header">
+          <h2>Today's Appointments</h2>
+          <button class="btn-secondary" (click)="onViewAllAppointments()">View All</button>
+        </div>
+
+        <div class="appointments-list">
+          <div class="appointment-card" *ngFor="let appointment of todaysAppointments"
+               [ngClass]="appointment.status">
+            <div class="appointment-info">
+              <div class="patient-name">{{ appointment.patientName }}</div>
+              <div class="appointment-details">
+                <span class="time">{{ appointment.time }}</span>
+                <span class="type">{{ appointment.type }}</span>
+              </div>
+            </div>
+            <div class="appointment-actions">
+              <span class="status-badge" [ngClass]="appointment.status">
+                {{ appointment.status | titlecase }}
+              </span>
+              <button class="btn-primary" (click)="onStartConsultation(appointment.id)"
+                      *ngIf="appointment.status === 'confirmed'">
+                Start Consultation
+              </button>
             </div>
           </div>
-          <div class="appointment-actions">
-            <span class="status-badge" [ngClass]="appointment.status">
+          <div *ngIf="todaysAppointments.length === 0" class="empty-state">
+            <p>No appointments scheduled for today</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Appointments -->
+      <div class="upcoming-section">
+        <div class="section-header">
+          <h2>Upcoming Appointments</h2>
+        </div>
+
+        <div class="upcoming-list">
+          <div class="upcoming-item" *ngFor="let appointment of upcomingAppointments">
+            <div class="appointment-info">
+              <div class="patient-name">{{ appointment.patientName }}</div>
+              <div class="appointment-details">
+                <span class="time">{{ appointment.time }}</span>
+                <span class="type">{{ appointment.type }}</span>
+              </div>
+            </div>
+            <div class="status-badge" [ngClass]="appointment.status">
               {{ appointment.status | titlecase }}
-            </span>
-            <button class="btn-primary" (click)="onStartConsultation(appointment.id)"
-                    *ngIf="appointment.status === 'confirmed'">
-              Start Consultation
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Upcoming Appointments -->
-    <div class="upcoming-section">
-      <div class="section-header">
-        <h2>Upcoming Appointments</h2>
-      </div>
-
-      <div class="upcoming-list">
-        <div class="upcoming-item" *ngFor="let appointment of upcomingAppointments">
-          <div class="appointment-info">
-            <div class="patient-name">{{ appointment.patientName }}</div>
-            <div class="appointment-details">
-              <span class="time">{{ appointment.time }}</span>
-              <span class="type">{{ appointment.type }}</span>
             </div>
           </div>
-          <div class="status-badge" [ngClass]="appointment.status">
-            {{ appointment.status | titlecase }}
+          <div *ngIf="upcomingAppointments.length === 0" class="empty-state">
+            <p>No upcoming appointments</p>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Recent Patients -->
-    <div class="patients-section">
-      <div class="section-header">
-        <h2>Recent Patients</h2>
-        <button class="btn-secondary">View All Patients</button>
-      </div>
+      <!-- Recent Patients -->
+      <div class="patients-section">
+        <div class="section-header">
+          <h2>Recent Patients</h2>
+          <button class="btn-secondary" (click)="onViewAllPatients()">View All Patients</button>
+        </div>
 
-      <div class="patients-grid">
-        <div class="patient-card" *ngFor="let patient of recentPatients"
-             (click)="onViewPatient(patient.id)">
-          <div class="patient-avatar">
-            <i class="icon">person</i>
-          </div>
-          <div class="patient-info">
-            <h3>{{ patient.name }}</h3>
-            <div class="patient-details">
-              <span class="detail-item">
-                <i class="icon">schedule</i>
-                Last: {{ patient.lastVisit }}
-              </span>
-              <span class="detail-item">
-                <i class="icon">event</i>
-                Next: {{ patient.nextAppointment }}
-              </span>
-              <span class="detail-item">
-                <i class="icon">healing</i>
-                {{ patient.condition }}
-              </span>
+        <div class="patients-grid">
+          <div class="patient-card" *ngFor="let patient of recentPatients"
+               (click)="onViewPatient(patient.patientId)">
+            <div class="patient-avatar">
+              {{ patient.name }}
+            </div>
+            <div class="patient-info">
+              <h3>{{ patient.name }}</h3>
+              <div class="patient-details">
+                <span class="detail-item">
+                  <i class="icon">schedule</i>
+                  Last: {{ patient.lastVisit }}
+                </span>
+                <span class="detail-item">
+                  <i class="icon">event</i>
+                  Next: {{ patient.nextAppointment }}
+                </span>
+                <span class="detail-item">
+                  <i class="icon">healing</i>
+                  {{ patient.condition }}
+                </span>
+              </div>
             </div>
           </div>
+          <div *ngIf="recentPatients.length === 0" class="empty-state">
+            <p>No recent patients</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Quick Actions -->
-  <div class="quick-actions">
-    <button class="action-card" (click)="onUpdateSchedule()">
-      <div class="action-icon">
-        <i class="icon">schedule</i>
-      </div>
-      <div class="action-content">
-        <h3>Update Schedule</h3>
-        <p>Manage your availability</p>
-      </div>
-    </button>
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="action-card" (click)="onUpdateSchedule()">
+        <div class="action-icon">
+          <i class="icon">schedule</i>
+        </div>
+        <div class="action-content">
+          <h3>Update Schedule</h3>
+          <p>Manage your availability</p>
+        </div>
+      </button>
 
-    <button class="action-card">
-      <div class="action-icon">
-        <i class="icon">prescription</i>
-      </div>
-      <div class="action-content">
-        <h3>Prescriptions</h3>
-        <p>View and manage prescriptions</p>
-      </div>
-    </button>
+      <button class="action-card" (click)="onViewPrescriptions()">
+        <div class="action-icon">
+          <i class="icon">prescription</i>
+        </div>
+        <div class="action-content">
+          <h3>Prescriptions</h3>
+          <p>View and manage prescriptions</p>
+        </div>
+      </button>
 
-    <button class="action-card">
-      <div class="action-icon">
-        <i class="icon">lab</i>
-      </div>
-      <div class="action-content">
-        <h3>Lab Results</h3>
-        <p>Review test results</p>
-      </div>
-    </button>
+      <button class="action-card" (click)="onViewLabResults()">
+        <div class="action-icon">
+          <i class="icon">lab</i>
+        </div>
+        <div class="action-content">
+          <h3>Lab Results</h3>
+          <p>Review test results</p>
+        </div>
+      </button>
 
-    <button class="action-card">
-      <div class="action-icon">
-        <i class="icon">message</i>
-      </div>
-      <div class="action-content">
-        <h3>Messages</h3>
-        <p>Patient communications</p>
-      </div>
-    </button>
+      <button class="action-card" (click)="onViewMessages()">
+        <div class="action-icon">
+          <i class="icon">message</i>
+        </div>
+        <div class="action-content">
+          <h3>Messages</h3>
+          <p>Patient communications</p>
+        </div>
+      </button>
+    </div>
   </div>
 </div>

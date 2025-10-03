@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { NotificationPanelComponent } from '../../shared/components/notification-panel/notification-panel.component';
 
 @Component({
   selector: 'app-doctor-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, NotificationPanelComponent],
   template: `
     <div class="layout">
       <!-- Animated Background -->
@@ -72,7 +73,7 @@ import { RouterModule } from '@angular/router';
             <div class="nav-indicator"></div>
           </a>
 
-          <a routerLink="/doctor/appointments" routerLinkActive="active" class="nav-item">
+          <a routerLink="/doctor/doctors/appointments" routerLinkActive="active" class="nav-item">
             <div class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -102,16 +103,47 @@ import { RouterModule } from '@angular/router';
             <div class="nav-indicator"></div>
           </a>
 
-          <a routerLink="/doctor/prescriptions" routerLinkActive="active" class="nav-item">
-            <div class="nav-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 15l4-4m0 0l4-4m-4 4l-4-4m4 4l4 4"/>
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-              </svg>
-            </div>
-            <span class="nav-text">Prescriptions</span>
-            <div class="nav-indicator"></div>
-          </a>
+          <a routerLink="/doctor/doctors/prescriptions" routerLinkActive="active" class="nav-item">
+  <div class="nav-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" 
+         viewBox="0 0 24 24" 
+         fill="none" 
+         stroke="currentColor" 
+         stroke-width="2" 
+         stroke-linecap="round" 
+         stroke-linejoin="round">
+      <!-- Capsule -->
+      <path d="M7.5 7.5l9 9"/>
+      <rect x="3" y="3" width="8" height="12" rx="4" transform="rotate(45 7 7)"/>
+      <rect x="13" y="9" width="8" height="12" rx="4" transform="rotate(45 17 13)"/>
+    </svg>
+  </div>
+  <span class="nav-text">Prescriptions</span>
+  <div class="nav-indicator"></div>
+</a>
+
+
+          <a routerLink="/doctor/doctors/medical-record" routerLinkActive="active" class="nav-item">
+  <div class="nav-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" 
+         viewBox="0 0 24 24" 
+         fill="none" 
+         stroke="currentColor" 
+         stroke-width="2" 
+         stroke-linecap="round" 
+         stroke-linejoin="round">
+      <!-- Clipboard shape -->
+      <path d="M9 2h6a2 2 0 0 1 2 2v2h-2V4H9v2H7V4a2 2 0 0 1 2-2z"/>
+      <rect x="4" y="6" width="16" height="16" rx="2" ry="2"/>
+      <!-- Medical cross -->
+      <line x1="12" y1="11" x2="12" y2="17"/>
+      <line x1="9" y1="14" x2="15" y2="14"/>
+    </svg>
+  </div>
+  <span class="nav-text">Medical record</span>
+  <div class="nav-indicator"></div>
+</a>
+
         </nav>
 
         <!-- Spacer -->
@@ -147,12 +179,12 @@ import { RouterModule } from '@angular/router';
           </div>
           
           <div class="topbar-right">
-            <button class="notification-btn">
+            <button class="notification-btn" (click)="openNotifications()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
-              <span class="notification-badge">5</span>
+              <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
             </button>
             
             <button class="settings-btn">
@@ -171,6 +203,9 @@ import { RouterModule } from '@angular/router';
           </div>
         </section>
       </main>
+
+      <!-- Notification Panel -->
+      <app-notification-panel></app-notification-panel>
     </div>
   `,
   styles: [`
@@ -638,4 +673,17 @@ import { RouterModule } from '@angular/router';
     }
   `]
 })
-export class DoctorLayoutComponent {}
+export class DoctorLayoutComponent {
+  @ViewChild(NotificationPanelComponent) notificationPanel!: NotificationPanelComponent;
+  
+  // TODO: Replace with actual user ID from auth service
+  currentUserId = 1;
+
+  openNotifications(): void {
+    this.notificationPanel.openPanel(this.currentUserId);
+  }
+
+  get unreadCount(): number {
+    return this.notificationPanel?.unreadCount || 0;
+  }
+}

@@ -7,19 +7,19 @@
 
   <!-- Quick Actions -->
   <div class="quick-actions">
-    <button class="action-btn primary" (click)="onBookAppointment()">
+    <button routerLink="/patient/appointments/booking" class="action-btn primary" (click)="onBookAppointment()">
       <i class="icon">add</i>
       <span>Book Appointment</span>
     </button>
-    <button class="action-btn secondary" (click)="onViewRecords()">
+    <button routerLink="/patient/patients/ehr" class="action-btn secondary" (click)="onViewRecords()">
       <i class="icon">description</i>
       <span>View Records</span>
     </button>
-    <button class="action-btn success" (click)="onContactDoctor()">
+    <button routerLink="/patient/messages" class="action-btn success" (click)="onContactDoctor()">
       <i class="icon">message</i>
       <span>Message Doctor</span>
     </button>
-    <button class="action-btn info" (click)="onUpdateProfile()">
+    <button routerLink="/patient/patients/profile" class="action-btn info" (click)="onUpdateProfile()">
       <i class="icon">person</i>
       <span>Update Profile</span>
     </button>
@@ -31,7 +31,7 @@
     <div class="appointments-section">
       <div class="section-header">
         <h2>Upcoming Appointments</h2>
-        <button class="btn-link">View All</button>
+        <button routerLink="/patient/patients/appointments" class="btn-link">View All</button>
       </div>
 
       <div class="appointments-list">
@@ -68,7 +68,7 @@
     <div class="health-section">
       <div class="section-header">
         <h2>Health Metrics</h2>
-        <button class="btn-link">View Details</button>
+        <button routerLink="/patient/patients/ehr" class="btn-link">View Details</button>
       </div>
 
       <div class="metrics-grid">
@@ -94,7 +94,7 @@
     <div class="records-section">
       <div class="section-header">
         <h2>Recent Medical Records</h2>
-        <button class="btn-link">View All Records</button>
+        <button routerLink="/patient/patients/ehr" class="btn-link">View All Records</button>
       </div>
 
       <div class="records-list">
@@ -121,7 +121,7 @@
     <div class="info-section">
       <div class="section-header">
         <h2>Patient Information</h2>
-        <button class="btn-link">Edit Profile</button>
+        <button routerLink="/patient/patients/profile" class="btn-link">Edit Profile</button>
       </div>
 
       <div class="info-card">

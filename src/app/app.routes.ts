@@ -38,6 +38,7 @@ export const routes: Routes = [
       { path: 'appointments', loadChildren: () => import('./features/appointments/appointments.routes').then(m => m.appointmentsRoutes) },
       { path: 'billing', loadChildren: () => import('./features/billing/billing.routes').then(m => m.billingRoutes) },
       { path: 'patients', loadChildren: () => import('./features/patients/patients.routes').then(m => m.patientsRoutes) }
+
     ]
   },
   {

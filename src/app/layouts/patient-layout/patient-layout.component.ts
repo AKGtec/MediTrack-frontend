@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { NotificationPanelComponent } from '../../shared/components/notification-panel/notification-panel.component';
 
 @Component({
   selector: 'app-patient-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, NotificationPanelComponent],
   template: `
     <div class="layout">
       <!-- Animated Background -->
@@ -126,12 +127,12 @@ import { RouterModule } from '@angular/router';
           </div>
           
           <div class="topbar-right">
-            <button class="notification-btn">
+            <button class="notification-btn" (click)="openNotifications()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
-              <span class="notification-badge">2</span>
+              <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
             </button>
             
             <button class="settings-btn">
@@ -150,61 +151,12 @@ import { RouterModule } from '@angular/router';
           </div>
         </section>
       </main>
+
+      <!-- Notification Panel -->
+      <app-notification-panel></app-notification-panel>
     </div>
   `,
   styles: [`
-
-
-  .brand { 
-      margin-bottom: 3rem;
-    }
-
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.75rem;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .logo-image {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
-    }
-
-    .logo-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .brand-text {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .logo { 
-      font-weight: 700; 
-      font-size: 1.4rem; 
-      color: #ffffff;
-      letter-spacing: -0.5px;
-    }
-
-    .role { 
-      font-size: 0.8rem; 
-      color: rgba(255, 255, 255, 0.7);
-      font-weight: 500;
-    }
     :host { 
       display: block; 
       height: 100vh; 
@@ -316,21 +268,22 @@ import { RouterModule } from '@angular/router';
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    .logo-image {
+      width: 48px;
+      height: 48px;
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.2);
       box-shadow: 0 4px 16px rgba(78, 205, 196, 0.3);
     }
 
-    .logo-icon svg {
-      width: 20px;
-      height: 20px;
-      color: white;
+    .logo-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .brand-text {
@@ -439,51 +392,6 @@ import { RouterModule } from '@angular/router';
     /* Spacer */
     .spacer { 
       flex: 1; 
-    }
-
-    /* User Profile */
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 1rem;
-    }
-
-    .profile-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .profile-avatar svg {
-      width: 20px;
-      height: 20px;
-      color: white;
-    }
-
-    .profile-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .profile-name {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #ffffff;
-    }
-
-    .profile-email {
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.6);
     }
 
     /* Logout */
@@ -668,4 +576,17 @@ import { RouterModule } from '@angular/router';
     }
   `]
 })
-export class PatientLayoutComponent {}
+export class PatientLayoutComponent {
+  @ViewChild(NotificationPanelComponent) notificationPanel!: NotificationPanelComponent;
+  
+  // TODO: Replace with actual user ID from auth service
+  currentUserId = 1;
+
+  openNotifications(): void {
+    this.notificationPanel.openPanel(this.currentUserId);
+  }
+
+  get unreadCount(): number {
+    return this.notificationPanel?.unreadCount || 0;
+  }
+}
