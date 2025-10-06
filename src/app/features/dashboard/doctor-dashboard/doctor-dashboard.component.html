@@ -108,7 +108,7 @@
         </div>
 
         <div class="patients-grid">
-          <div class="patient-card" *ngFor="let patient of recentPatients"
+          <div onkeydown="" class="patient-card" *ngFor="let patient of recentPatients"
                (click)="onViewPatient(patient.patientId)">
             <div class="patient-avatar">
               {{ patient.name }}
@@ -136,6 +136,12 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Messaging Section -->
+    <div *ngIf="showMessaging" class="messaging-section">
+      <app-messaging [partnerId]="selectedPatientId" [partnerName]="selectedPatientName"
+                     (close)="showMessaging = false"></app-messaging>
     </div>
 
     <!-- Quick Actions -->

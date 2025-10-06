@@ -497,3 +497,25 @@
     align-items: flex-start;
   }
 }
+
+.google-signup-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.loading-spinner.small {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.loading-spinner.small .spinner {
+  width: 16px;
+  height: 16px;
+}
+
+.social-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

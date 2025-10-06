@@ -12,10 +12,12 @@ import { PatientDto } from '../../../core/models/patient.models';
 import { AppointmentStatus } from '../../../core/models/enums';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
+import { MessagingComponent } from '../../../shared/components/messaging/messaging.component';
 
 interface UpcomingAppointment {
   id: number;
   doctorName: string;
+  doctorId: number;
   specialty: string;
   date: string;
   time: string;
@@ -42,7 +44,7 @@ interface RecentRecord {
 @Component({
   selector: 'app-patient-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, MessagingComponent],
   templateUrl: './patient-dashboard.component.html',
   styleUrl: './patient-dashboard.component.css'
 })
@@ -58,7 +60,13 @@ export class PatientDashboardComponent implements OnInit {
     allergies: [] as string[],
     emergencyContact: ''
   };
-  
+
+  showMessaging = false;
+  selectedDoctorId = 0;
+  selectedDoctorName = '';
+  primaryDoctorId = 2; // Default for mock
+  primaryDoctorName = 'Dr. Sarah Johnson';
+
   // Current user ID - in a real app, this would come from an auth service
   currentUserId = 1;
 
@@ -111,11 +119,17 @@ export class PatientDashboardComponent implements OnInit {
       next: (appointments) => {
         // Filter to only upcoming appointments and sort by date
         const upcomingAppointments = appointments
-          .filter(a => new Date(a.appointmentDate) >= new Date() && 
+          .filter(a => new Date(a.appointmentDate) >= new Date() &&
                       a.status !== AppointmentStatus.Cancelled)
           .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime());
-        
+
         this.upcomingAppointments = upcomingAppointments.map(a => this.mapAppointmentDto(a)).slice(0, 3);
+
+        // Set primary doctor for messaging
+        if (this.upcomingAppointments.length > 0) {
+          this.primaryDoctorId = this.upcomingAppointments[0].doctorId;
+          this.primaryDoctorName = this.upcomingAppointments[0].doctorName;
+        }
       },
       error: (error) => {
         console.error('Error fetching appointments:', error);
@@ -167,6 +181,7 @@ export class PatientDashboardComponent implements OnInit {
     return {
       id: appointment.appointmentId,
       doctorName: appointment.doctorName,
+      doctorId: appointment.doctorId,
       specialty: 'Specialist', // This info might not be in the DTO, could be fetched separately
       date: dateString,
       time: timeString,
@@ -330,6 +345,7 @@ export class PatientDashboardComponent implements OnInit {
       {
         id: 1,
         doctorName: 'Dr. Sarah Johnson',
+        doctorId: 2,
         specialty: 'Cardiology',
         date: 'Tomorrow',
         time: '10:00 AM',
@@ -339,6 +355,7 @@ export class PatientDashboardComponent implements OnInit {
       {
         id: 2,
         doctorName: 'Dr. Michael Chen',
+        doctorId: 3,
         specialty: 'General Practice',
         date: 'Dec 15, 2024',
         time: '2:30 PM',
@@ -392,8 +409,9 @@ export class PatientDashboardComponent implements OnInit {
   }
 
   onContactDoctor() {
-    // This could navigate to a messaging interface
-    this.router.navigate(['/patient/messages']);
+    this.selectedDoctorId = this.primaryDoctorId;
+    this.selectedDoctorName = this.primaryDoctorName;
+    this.showMessaging = true;
   }
 
   onUpdateProfile() {

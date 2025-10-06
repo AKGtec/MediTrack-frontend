@@ -11,7 +11,8 @@ import { AppointmentDto } from '../../../core/models/appointment.models';
 import { PatientDto } from '../../../core/models/patient.models';
 import { PrescriptionDto } from '../../../core/models/prescription.models';
 import { MedicalRecordDto } from '../../../core/models/medical-record.models';
-import {AppointmentStatus} from '../../../core/models/enums'
+import {AppointmentStatus} from '../../../core/models/enums';
+import { MessagingComponent } from '../../../shared/components/messaging/messaging.component';
 
 interface DashboardAppointment {
   id: number;
@@ -35,7 +36,7 @@ interface DashboardPatient {
 @Component({
   selector: 'app-doctor-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MessagingComponent],
   templateUrl: './doctor-dashboard.component.html',
   styleUrl: './doctor-dashboard.component.css'
 })
@@ -59,6 +60,10 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
     pendingPrescriptions: 0,
     completedToday: 0
   };
+
+  showMessaging = false;
+  selectedPatientId = 0;
+  selectedPatientName = '';
 
   private doctorId: number | null = null;
   private readonly destroy$ = new Subject<void>();
@@ -317,7 +322,14 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
 
   onViewPatient(patientId: number) {
     console.log('Viewing patient:', patientId);
-    this.router.navigate(['/doctor/patients', patientId]);
+    const patient = this.recentPatients.find(p => p.patientId === patientId);
+    if (patient) {
+      this.selectedPatientId = patientId;
+      this.selectedPatientName = patient.name;
+      this.showMessaging = true;
+    } else {
+      this.router.navigate(['/doctor/patients', patientId]);
+    }
   }
 
   onUpdateSchedule() {

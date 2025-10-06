@@ -440,6 +440,14 @@
   font-style: italic;
 }
 
+/* Messaging Section */
+.messaging-section {
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Patient Avatar Initials */
 .patient-avatar {
   width: 50px;

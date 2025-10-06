@@ -1,0 +1,36 @@
+<div class="messaging-container">
+  <div class="header">
+    <h3>Messaging with {{ partnerName }}</h3>
+    <button class="close-btn" (click)="closeMessaging()">×</button>
+  </div>
+
+  <div class="messages-area">
+    <div *ngIf="loading" class="loading">
+      <p>Loading messages...</p>
+    </div>
+
+    <div *ngIf="!loading && error" class="error">
+      <p>{{ error }}</p>
+      <button (click)="loadConversation()">Retry</button>
+    </div>
+
+    <div *ngIf="!loading && !error" class="messages-list">
+      <div *ngFor="let message of messages" class="message"
+           [ngClass]="{'own': message.senderId === currentUserId, 'partner': message.senderId !== currentUserId}">
+        <div class="message-content">
+          <span class="sender">{{ message.senderId === currentUserId ? 'You' : message.senderName }}</span>
+          <p>{{ message.messageText }}</p>
+          <span class="timestamp">{{ message.sentAt | date:'short' }}</span>
+        </div>
+      </div>
+      <div *ngIf="messages.length === 0" class="no-messages">
+        <p>No messages yet. Start the conversation!</p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="send-message">
+    <textarea [(ngModel)]="newMessageText" placeholder="Type your message..." rows="3"></textarea>
+    <button (click)="sendMessage()" [disabled]="!newMessageText.trim()">Send</button>
+  </div>
+</div>

@@ -1,9 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { UsersService } from '../../../core/services/users.service';
+import { GoogleAuthService } from '../../../core/services/googleauth.service';
 import { UserLoginDto, AuthStorage } from '../../../core/models/user.models';
+import { Subscription } from 'rxjs';
+
+declare const google: any;
 
 export interface NotificationData {
   message: string;
@@ -17,7 +21,7 @@ export interface NotificationData {
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
   loginData: UserLoginDto = {
     email: '',
     password: ''
@@ -30,8 +34,38 @@ export class LoginComponent {
   };
 
   isLoading = false;
+  isGoogleLoading = false;
+  private googleAuthSub: Subscription | null = null;
 
-  constructor(private usersService: UsersService, private router: Router) {}
+  constructor(
+    private usersService: UsersService, 
+    private googleAuthService: GoogleAuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    this.initializeGoogleAuth();
+    
+    // Subscribe to Google auth errors
+    this.googleAuthSub = this.googleAuthService.user$.subscribe({
+      error: (error) => {
+        this.showNotification('Google signup failed. Please try again.', 'error');
+        this.isGoogleLoading = false;
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.googleAuthSub) {
+      this.googleAuthSub.unsubscribe();
+    }
+  }
+
+  initializeGoogleAuth() {
+    this.googleAuthService.initialize(() => {
+      console.log('Google Auth initialized');
+    });
+  }
 
   showNotification(message: string, type: 'success' | 'error' | 'info') {
     this.notification = {
@@ -92,6 +126,54 @@ export class LoginComponent {
         }
         
         this.showNotification(errorMessage, 'error');
+      }
+    });
+  }
+
+  // New method for Google sign-up
+  onGoogleSignUp() {
+    this.isGoogleLoading = true;
+    this.showNotification('Connecting to Google...', 'info');
+
+    try {
+      // Render the button programmatically and trigger click
+      const buttonContainer = document.getElementById('googleSignUpButton');
+      if (buttonContainer) {
+        this.googleAuthService.renderButton('googleSignUpButton');
+        
+        // Simulate click on the Google button
+        const googleButton = buttonContainer.querySelector('div[role="button"]') as HTMLElement;
+        if (googleButton) {
+          googleButton.click();
+        } else {
+          // If button not found immediately, try after a short delay
+          setTimeout(() => {
+            const retryButton = buttonContainer.querySelector('div[role="button"]') as HTMLElement;
+            if (retryButton) {
+              retryButton.click();
+            } else {
+              this.isGoogleLoading = false;
+              this.showNotification('Failed to initialize Google sign up. Please refresh and try again.', 'error');
+            }
+          }, 500);
+        }
+      }
+    } catch (error) {
+      this.isGoogleLoading = false;
+      this.showNotification('Google sign up failed. Please try again.', 'error');
+      console.error('Google sign up error:', error);
+    }
+  }
+
+  // Alternative manual Google sign-up implementation
+  manualGoogleSignUp() {
+    this.isGoogleLoading = true;
+    this.showNotification('Opening Google sign up...', 'info');
+
+    google.accounts.id.prompt((notification: any) => {
+      if (notification.isNotDisplayed() || notification.isSkipped()) {
+        this.isGoogleLoading = false;
+        this.showNotification('Please allow pop-ups for Google sign up.', 'info');
       }
     });
   }

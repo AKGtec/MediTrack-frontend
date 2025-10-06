@@ -25,6 +25,12 @@
     </button>
   </div>
 
+  <!-- Messaging Section -->
+  <div *ngIf="showMessaging" class="messaging-section">
+    <app-messaging [partnerId]="selectedDoctorId" [partnerName]="selectedDoctorName"
+                   (close)="showMessaging = false"></app-messaging>
+  </div>
+
   <!-- Main Content -->
   <div class="dashboard-content">
     <!-- Upcoming Appointments -->
