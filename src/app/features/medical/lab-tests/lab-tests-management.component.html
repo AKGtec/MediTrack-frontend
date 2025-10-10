@@ -1,0 +1,131 @@
+<div class="lab-tests-container">
+  <div class="header-section">
+    <h1 class="page-title">Laboratory Tests</h1>
+    <p class="page-subtitle">View and manage laboratory test results</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading lab tests...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <div class="error-icon">⚠️</div>
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Lab Tests Section -->
+  <div *ngIf="!loading && !error" class="lab-tests-section">
+    <!-- Search -->
+    <div class="search-section">
+      <input
+        type="text"
+        placeholder="Search tests..."
+        [(ngModel)]="searchTerm"
+        (input)="onFilterChange()"
+        class="search-input">
+    </div>
+
+    <!-- Tests List -->
+    <div class="tests-list">
+      <div class="test-card" *ngFor="let test of filteredLabTests">
+        <div class="card-header">
+          <h3>{{ test.testName }}</h3>
+          <span class="status-badge" [ngClass]="getStatusClass(test.status)">
+            {{ test.status }}
+          </span>
+        </div>
+        <div class="card-content">
+          <p><strong>Patient:</strong> {{ test.patientName }}</p>
+          <p><strong>Doctor:</strong> {{ test.doctorName }}</p>
+          <p><strong>Results:</strong> {{ test.results }}</p>
+          <p><strong>Date:</strong> {{ test.testDate | date:'shortDate' }}</p>
+        </div>
+        <div class="card-actions">
+          <button class="btn-secondary" (click)="showEditDialog(test)">View Details</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Test Button - Only show for doctors -->
+    <div class="add-section" *ngIf="isDoctor">
+      <button class="btn-primary" (click)="showAddDialog()">Add New Test</button>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredLabTests.length === 0" class="empty-state">
+      <h3>No lab tests found</h3>
+      <p>Try adjusting your search or add a new test.</p>
+    </div>
+  </div>
+
+  <!-- Simple Modal for Add/Edit -->
+  <div *ngIf="displayDialog" class="modal-overlay" (click)="hideDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Edit Lab Test' : 'Add Lab Test' }}</h2>
+        <button class="close-btn" (click)="hideDialog()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <form class="test-form">
+          <div class="form-group">
+            <label>Test Name</label>
+            <input type="text" [(ngModel)]="form.testName" name="testName" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea [(ngModel)]="form.description" name="description" rows="3" class="form-input"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Select Patient</label>
+            <select [(ngModel)]="form.patientId" name="patientId" class="form-input" required>
+              <option [value]="0">Select a patient...</option>
+              <option *ngFor="let patient of patients" [value]="patient.userId">
+                {{ patient.fullName }} (ID: {{ patient.userId }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="!isDoctor">
+            <label>Doctor ID</label>
+            <input type="number" [(ngModel)]="form.doctorId" name="doctorId" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label>Test Date</label>
+            <input type="date" [(ngModel)]="form.testDate" name="testDate" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="form.status" name="status" class="form-input">
+              <option *ngFor="let option of statusOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Results</label>
+            <textarea [(ngModel)]="form.results" name="results" rows="4" class="form-input"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-secondary" (click)="hideDialog()">Cancel</button>
+            <button class="btn-primary" (click)="saveLabTest()">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back Button -->
+  <div class="back-section">
+    <button class="btn-secondary" (click)="onBackToDashboard()">Back to Dashboard</button>
+  </div>
+</div>

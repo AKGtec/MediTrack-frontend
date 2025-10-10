@@ -1,31 +1,49 @@
 <div class="register-card">
   <h2>Join MediTrack</h2>
   <p>Create your account to get started</p>
-  <form (ngSubmit)="onRegister()" #registerForm="ngForm">
-    <div class="form-row">
-      <div class="form-group">
-        <label for="firstName">First Name</label>
-        <input type="text" id="firstName" [(ngModel)]="registerData.firstName" name="firstName" required>
+  <div *ngIf="!showVerificationForm">
+    <form (ngSubmit)="onRegister()" #registerForm="ngForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" [(ngModel)]="registerData.firstName" name="firstName" required>
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" [(ngModel)]="registerData.lastName" name="lastName" required>
+        </div>
       </div>
       <div class="form-group">
-        <label for="lastName">Last Name</label>
-        <input type="text" id="lastName" [(ngModel)]="registerData.lastName" name="lastName" required>
+        <label for="email">Email</label>
+        <input type="email" id="email" [(ngModel)]="registerData.email" name="email" required>
       </div>
-    </div>
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" [(ngModel)]="registerData.email" name="email" required>
-    </div>
-    <div class="form-group">
-      <label for="phoneNumber">Phone Number</label>
-      <input type="tel" id="phoneNumber" [(ngModel)]="registerData.phoneNumber" name="phoneNumber" required>
-    </div>
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" [(ngModel)]="registerData.password" name="password" required minlength="6">
-    </div>
-    <button type="submit" [disabled]="!registerForm.valid" class="register-btn">Create Account</button>
-  </form>
+      <div class="form-group">
+        <label for="phoneNumber">Phone Number</label>
+        <input type="tel" id="phoneNumber" [(ngModel)]="registerData.phoneNumber" name="phoneNumber" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" [(ngModel)]="registerData.password" name="password" required minlength="6">
+      </div>
+      <button type="submit" [disabled]="!registerForm.valid || loading" class="register-btn">
+        {{ loading ? 'Sending...' : 'Send Verification Code' }}
+      </button>
+    </form>
+  </div>
+  <div *ngIf="showVerificationForm" class="verification-card">
+    <h3>Verify Your Email</h3>
+    <p>Enter the 6-digit code sent to your email.</p>
+    <form (ngSubmit)="onVerifyCode()" #verifyForm="ngForm">
+      <div class="form-group">
+        <label for="verificationCode">Verification Code</label>
+        <input type="text" id="verificationCode" [(ngModel)]="verificationCode" name="verificationCode" required maxlength="6" pattern="[0-9]{6}" placeholder="Enter 6-digit code">
+      </div>
+      <button type="submit" [disabled]="!verifyForm.valid || loading" class="register-btn">
+        {{ loading ? 'Verifying...' : 'Verify & Register' }}
+      </button>
+    </form>
+  </div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
   <div class="links">
     <a routerLink="/auth/login">Already have an account? Sign in</a>
   </div>

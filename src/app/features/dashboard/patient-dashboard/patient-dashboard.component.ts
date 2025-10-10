@@ -419,9 +419,17 @@ export class PatientDashboardComponent implements OnInit {
   }
 
   onViewAppointment(appointmentId: number) {
-    this.router.navigate(['/patient/patients/appointments'], { 
+    this.router.navigate(['/patient/patients/appointments'], {
       queryParams: { appointmentId: appointmentId }
     });
+  }
+
+  onViewLabResults() {
+    this.router.navigate(['/patient/medical/lab-tests']);
+  }
+
+  onViewNotifications() {
+    this.router.navigate(['/patient/notifications/center']);
   }
 
   getTrendIcon(trend: string): string {

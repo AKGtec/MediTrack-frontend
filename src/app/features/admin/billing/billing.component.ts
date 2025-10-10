@@ -1,6 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { InvoicesService } from '../../../core/services/invoices.service';
+import { PaymentsService } from '../../../core/services/payments.service';
+import { UsersService } from '../../../core/services/users.service';
+import { InvoiceDto } from '../../../core/models/invoice.models';
+import { InvoiceStatus } from '../../../core/models/enums';
+import { PaymentDto } from '../../../core/models/payment.models';
+import { PatientDto } from '../../../core/models/patient.models';
 
 interface Invoice {
   id: number;
@@ -40,6 +48,7 @@ export class BillingComponent implements OnInit {
   currentView: 'invoices' | 'payments' = 'invoices';
   showInvoiceModal = false;
   selectedInvoice: Invoice | null = null;
+  isLoading = false;
 
   billingStats = {
     totalRevenue: 0,
@@ -48,13 +57,97 @@ export class BillingComponent implements OnInit {
     monthlyRevenue: 0
   };
 
+  constructor(
+    private invoicesService: InvoicesService,
+    private paymentsService: PaymentsService,
+    private usersService: UsersService
+  ) {}
+
   ngOnInit() {
     this.loadBillingData();
-    this.calculateStats();
   }
 
   loadBillingData() {
-    // Mock data - replace with actual service calls
+    this.isLoading = true;
+    forkJoin({
+      invoices: this.invoicesService.getAllInvoices(),
+      patients: this.usersService.getAllPatients()
+    }).subscribe({
+      next: (data) => {
+        this.processInvoicesAndPayments(data.invoices, [], data.patients);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading billing data:', error);
+        this.isLoading = false;
+        this.loadMockData();
+      }
+    });
+  }
+
+  private processInvoicesAndPayments(apiInvoices: InvoiceDto[], apiPayments: PaymentDto[], patients: PatientDto[]) {
+    // Process invoices
+    this.invoices = this.mapInvoicesToDisplayFormat(apiInvoices, patients);
+    this.filteredInvoices = [...this.invoices];
+
+    // For payments, we'll load all payments separately since there's no getAllPayments
+    // For now, we'll create mock payments based on paid invoices
+    this.payments = this.createMockPaymentsFromInvoices(apiInvoices, patients);
+    this.filteredPayments = [...this.payments];
+
+    this.calculateStats();
+  }
+
+  private mapInvoicesToDisplayFormat(apiInvoices: InvoiceDto[], patients: PatientDto[]): Invoice[] {
+    return apiInvoices.map(inv => {
+      const patient = patients.find(p => p.userId === inv.patientId);
+      const issueDate = new Date(inv.issuedDate).toISOString().split('T')[0];
+      const dueDate = new Date(inv.issuedDate.getTime() + 15 * 24 * 60 * 60 * 1000); // 15 days from issue date
+
+      let status: Invoice['status'] = 'pending';
+      switch (inv.status) {
+        case InvoiceStatus.Paid:
+          status = 'paid';
+          break;
+        case InvoiceStatus.Pending:
+          status = 'pending';
+          break;
+        case InvoiceStatus.Cancelled:
+          status = 'paid'; // Map cancelled to paid for simplicity, or we could filter them out
+          break;
+      }
+
+      return {
+        id: inv.invoiceId,
+        patientName: patient?.fullName || `Patient #${inv.patientId}`,
+        appointmentId: inv.appointmentId,
+        amount: inv.amount,
+        status: status,
+        issueDate: issueDate,
+        dueDate: dueDate.toISOString().split('T')[0],
+        description: `Invoice #${inv.invoiceId} for appointment #${inv.appointmentId}`
+      };
+    });
+  }
+
+  private createMockPaymentsFromInvoices(invoices: InvoiceDto[], patients: PatientDto[]): Payment[] {
+    const paidInvoices = invoices.filter(inv => inv.status === InvoiceStatus.Paid);
+    return paidInvoices.map(inv => {
+      const patient = patients.find(p => p.userId === inv.patientId);
+      return {
+        id: inv.invoiceId, // Using invoiceId as paymentId for mock purposes
+        invoiceId: inv.invoiceId,
+        patientName: patient?.fullName || `Patient #${inv.patientId}`,
+        amount: inv.amount,
+        method: 'credit_card', // Default method
+        date: inv.paidDate ? new Date(inv.paidDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        status: 'completed'
+      };
+    });
+  }
+
+  private loadMockData() {
+    // Fallback mock data if API fails
     this.invoices = [
       {
         id: 1,
@@ -111,6 +204,7 @@ export class BillingComponent implements OnInit {
 
     this.filteredInvoices = [...this.invoices];
     this.filteredPayments = [...this.payments];
+    this.calculateStats();
   }
 
   calculateStats() {

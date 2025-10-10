@@ -1,0 +1,321 @@
+<div class="notification-center-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">Notification Center</h1>
+      <p class="page-subtitle">Manage and send notifications to users</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="markAllAsRead()" [disabled]="getUnreadCount() === 0">
+        <i class="icon">done_all</i>
+        <span>Mark All Read ({{ getUnreadCount() }})</span>
+      </button>
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="icon">add</i>
+        <span>Send Notification</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="icon">notifications</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ filteredNotifications.length }}</h3>
+        <p>Total Notifications</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon unread">
+        <i class="icon">mark_email_unread</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ getUnreadCount() }}</h3>
+        <p>Unread</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon today">
+        <i class="icon">today</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ todaysNotificationsCount }}</h3>
+        <p>Sent Today</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="icon">search</i>
+          Search
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="filterNotifications()"
+          placeholder="Search by title, message, or user..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="icon">category</i>
+          Type
+        </label>
+        <select
+          [(ngModel)]="selectedType"
+          (change)="filterNotifications()"
+          class="filter-select"
+        >
+          <option value="all">All Types</option>
+          <option value="General">General</option>
+          <option value="AppointmentReminder">Appointment Reminder</option>
+          <option value="Payment">Payment</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-checkbox">
+          <input
+            type="checkbox"
+            [(ngModel)]="showUnreadOnly"
+            (change)="filterNotifications()"
+          />
+          <span class="checkmark"></span>
+          Show unread only
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading notifications...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-state">
+    <div class="error-icon">
+      <i class="icon">error</i>
+    </div>
+    <div class="error-content">
+      <h3>Error Loading Notifications</h3>
+      <p>{{ error }}</p>
+      <button class="retry-btn" (click)="loadNotifications()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Notifications List -->
+  <div *ngIf="!isLoading && !error" class="notifications-section">
+    <div class="notifications-list">
+      <div *ngFor="let notification of filteredNotifications" class="notification-card"
+           [class.unread]="!notification.isRead">
+        <div class="notification-header">
+          <div class="notification-icon" [style.background-color]="getTypeColor(notification.type)">
+            <i class="icon">{{ getTypeIcon(notification.type) }}</i>
+          </div>
+          <div class="notification-info">
+            <h3 class="notification-title">{{ notification.title }}</h3>
+            <p class="notification-user">{{ notification.userName }}</p>
+            <span class="notification-time">{{ formatDateTime(notification.sentAt) }}</span>
+          </div>
+          <div class="notification-actions">
+            <button class="btn-icon" (click)="openDetailsModal(notification)" title="View Details">
+              <i class="icon">visibility</i>
+            </button>
+            <button class="btn-icon" (click)="markAsRead(notification)" *ngIf="!notification.isRead" title="Mark as Read">
+              <i class="icon">visibility</i>
+            </button>
+            <button class="btn-icon delete" (click)="deleteNotification(notification)" title="Delete">
+              <i class="icon">delete</i>
+            </button>
+          </div>
+        </div>
+
+        <div class="notification-body">
+          <p class="notification-message">{{ notification.message }}</p>
+          <div class="notification-meta">
+            <span class="notification-type" [style.background-color]="getTypeColor(notification.type)">
+              {{ notification.type }}
+            </span>
+            <span class="read-status" [class.unread]="!notification.isRead">
+              {{ notification.isRead ? 'Read' : 'Unread' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredNotifications.length === 0" class="empty-state">
+      <div class="empty-icon">
+        <i class="icon">notifications_none</i>
+      </div>
+      <h3>No notifications found</h3>
+      <p *ngIf="searchTerm || selectedType !== 'all' || showUnreadOnly">
+        Try adjusting your search criteria or filters.
+      </p>
+      <p *ngIf="!searchTerm && selectedType === 'all' && !showUnreadOnly">
+        No notifications have been sent yet.
+      </p>
+    </div>
+  </div>
+
+  <!-- Create Notification Modal -->
+  <div *ngIf="showCreateModal" class="modal-overlay" (click)="closeCreateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Send New Notification</h2>
+        <button class="close-btn" (click)="closeCreateModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form class="notification-form">
+          <!-- Patient Selector for Doctors -->
+          <div class="form-group" *ngIf="currentUserIsDoctor">
+            <label class="form-label">Select Patient *</label>
+            <select
+              [(ngModel)]="selectedPatient"
+              (change)="onPatientChange()"
+              class="form-select"
+            >
+              <option [ngValue]="null">Select a patient...</option>
+              <option *ngFor="let patient of patients" [ngValue]="patient.userId">
+                {{ patient.fullName }} ({{ patient.email }})
+              </option>
+            </select>
+          </div>
+
+          <!-- User ID Input for Non-Doctors -->
+          <div class="form-group" *ngIf="!currentUserIsDoctor">
+            <label class="form-label">User ID *</label>
+            <input
+              type="number"
+              [(ngModel)]="newNotification.userId"
+              class="form-input"
+              placeholder="Enter user ID"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Notification Type *</label>
+              <select [(ngModel)]="newNotification.type" class="form-select">
+                <option *ngFor="let option of notificationTypeOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Title *</label>
+            <input
+              type="text"
+              [(ngModel)]="newNotification.title"
+              class="form-input"
+              placeholder="Enter notification title"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Message *</label>
+            <textarea
+              [(ngModel)]="newNotification.message"
+              class="form-textarea"
+              rows="4"
+              placeholder="Enter notification message..."
+            ></textarea>
+          </div>
+
+          <div *ngIf="error" class="form-error">
+            <i class="icon">error</i>
+            {{ error }}
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateModal()">Cancel</button>
+        <button class="btn-primary" (click)="createNotification()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Send Notification</span>
+          <span *ngIf="isLoading">Sending...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Details Modal -->
+  <div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeDetailsModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Notification Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedNotification">
+        <div class="notification-details">
+          <div class="detail-section">
+            <h3>Notification Information</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Title:</label>
+                <span>{{ selectedNotification.title }}</span>
+              </div>
+              <div class="detail-item">
+                <label>User:</label>
+                <span>{{ selectedNotification.userName }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Type:</label>
+                <span class="type-badge" [style.background-color]="getTypeColor(selectedNotification.type)">
+                  <i class="icon">{{ getTypeIcon(selectedNotification.type) }}</i>
+                  {{ selectedNotification.type }}
+                </span>
+              </div>
+              <div class="detail-item">
+                <label>Sent At:</label>
+                <span>{{ formatDateTime(selectedNotification.sentAt) }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Status:</label>
+                <span class="status-badge" [class.read]="selectedNotification.isRead" [class.unread]="!selectedNotification.isRead">
+                  {{ selectedNotification.isRead ? 'Read' : 'Unread' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Message</h3>
+            <div class="message-container">
+              <p class="message-text">{{ selectedNotification.message }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailsModal()">Close</button>
+        <button class="btn-primary" (click)="markAsRead(selectedNotification!)" *ngIf="selectedNotification && !selectedNotification.isRead">
+          Mark as Read
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

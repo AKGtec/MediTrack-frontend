@@ -96,3 +96,30 @@
 .links a:hover {
   color: #764ba2;
 }
+
+.verification-card {
+  margin-top: 2rem;
+}
+
+.verification-card h3 {
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.verification-card p {
+  margin-bottom: 1.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #e31b23;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  background: #ffebee;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ffcdd2;
+}

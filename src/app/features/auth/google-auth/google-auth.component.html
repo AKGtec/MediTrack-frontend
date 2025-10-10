@@ -1,0 +1,45 @@
+<div class="google-auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">Welcome to MediTrack</h1>
+      <p class="auth-subtitle">Sign in with your Google account to continue</p>
+    </div>
+
+    <div class="auth-body">
+      <!-- Google Sign-In Button -->
+      <div class="google-signin-section">
+        <div id="google-signin-button" class="google-button-container"></div>
+      </div>
+
+      <div class="divider">
+        <span class="divider-text">or</span>
+      </div>
+
+      <!-- Manual Login Option -->
+      <div class="manual-login-section">
+        <button class="manual-login-btn" (click)="onManualLogin()">
+          <i class="icon">person</i>
+          <span>Sign in with Email</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>Authenticating with Google...</p>
+    </div>
+
+    <!-- Error Display -->
+    <div *ngIf="error" class="error-message">
+      <div class="error-icon">
+        <i class="icon">error</i>
+      </div>
+      <div class="error-content">
+        <h3>Authentication Failed</h3>
+        <p>{{ error }}</p>
+        <button class="retry-btn" (click)="error = null">Try Again</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -351,10 +351,18 @@ export class DoctorDashboardComponent implements OnInit, OnDestroy {
   }
 
   onViewLabResults() {
-    this.router.navigate(['/doctor/lab-results']);
+    this.router.navigate(['/doctor/medical/lab-tests']);
   }
 
   onViewMessages() {
     this.router.navigate(['/doctor/messages']);
+  }
+
+  onViewBilling() {
+    this.router.navigate(['/doctor/billing/invoices']);
+  }
+
+  onViewNotifications() {
+    this.router.navigate(['/doctor/notifications/center']);
   }
 }

@@ -49,6 +49,14 @@ export class AppointmentService {
   }
 
   /**
+   * Get all appointments
+   * @returns Observable of AppointmentDto array
+   */
+  getAllAppointments(): Observable<AppointmentDto[]> {
+    return this.http.get<AppointmentDto[]>(this.apiUrl);
+  }
+
+  /**
    * Update appointment status
    * @param id Appointment ID
    * @param updateStatusDto New status

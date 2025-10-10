@@ -38,9 +38,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   private googleAuthSub: Subscription | null = null;
 
   constructor(
-    private usersService: UsersService, 
-    private googleAuthService: GoogleAuthService,
-    private router: Router
+    readonly usersService: UsersService, 
+    readonly googleAuthService: GoogleAuthService,
+    readonly  router: Router
   ) {}
 
   ngOnInit() {

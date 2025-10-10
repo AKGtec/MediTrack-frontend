@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MedicalRecordsService } from '../../../core/services/medical-records.service';
 import { MedicalRecordDto } from '../../../core/models/medical-record.models';
+import { AuthStorage } from '../../../core/models/user.models';
 
 @Component({
   selector: 'app-patient-ehr',
@@ -94,13 +95,29 @@ export class PatientEhrComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   sub?: Subscription;
+  patientId: number | null = null;
 
   constructor(private medicalRecords: MedicalRecordsService, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    const idParam = this.route.snapshot.queryParamMap.get('id');
-    const patientId = idParam ? Number(idParam) : 1; // TODO: replace with authenticated patient id
-    this.load(patientId);
+    this.loading = true;
+
+    // Get the authenticated patient ID
+    try {
+      const currentUser = AuthStorage.get();
+      this.patientId = currentUser?.user?.userId ?? null;
+
+      if (this.patientId) {
+        this.load(this.patientId);
+      } else {
+        this.error = 'Unable to determine patient context. Please sign in again.';
+        this.loading = false;
+      }
+    } catch (err) {
+      console.error('Failed to resolve patient context', err);
+      this.error = 'Unable to determine patient context. Please sign in again.';
+      this.loading = false;
+    }
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }

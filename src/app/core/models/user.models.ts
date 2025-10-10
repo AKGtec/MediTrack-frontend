@@ -33,6 +33,10 @@ export interface AuthResponseDto {
   token: string;
 }
 
+export interface GoogleAuthDto {
+  idToken: string;
+}
+
 export class AuthStorage {
   private static readonly storageKey = 'authData';
 

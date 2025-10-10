@@ -58,6 +58,12 @@ export class AdminDashboardComponent implements OnInit {
       case 'billing':
         this.router.navigate(['/admin/billing']);
         break;
+      case 'medical':
+        this.router.navigate(['/admin/medical/lab-tests']);
+        break;
+      case 'notifications':
+        this.router.navigate(['/admin/notifications/center']);
+        break;
       default:
         console.log('Unknown action:', action);
     }

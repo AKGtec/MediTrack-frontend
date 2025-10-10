@@ -26,6 +26,10 @@ export const routes: Routes = [
       {
         path: 'reset-password',
         loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
+      },
+      {
+        path: 'google-auth',
+        loadComponent: () => import('./features/auth/google-auth/google-auth.component').then(m => m.GoogleAuthComponent)
       }
     ]
   },
@@ -37,6 +41,8 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./features/dashboard/patient-dashboard/patient-dashboard.component').then(m => m.PatientDashboardComponent) },
       { path: 'appointments', loadChildren: () => import('./features/appointments/appointments.routes').then(m => m.appointmentsRoutes) },
       { path: 'billing', loadChildren: () => import('./features/billing/billing.routes').then(m => m.billingRoutes) },
+      { path: 'medical', loadChildren: () => import('./features/medical/medical.routes').then(m => m.medicalRoutes) },
+      { path: 'notifications', loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.notificationRoutes) },
       { path: 'patients', loadChildren: () => import('./features/patients/patients.routes').then(m => m.patientsRoutes) }
 
     ]
@@ -46,10 +52,13 @@ export const routes: Routes = [
     loadComponent: () => import('./layouts/doctor-layout/doctor-layout.component').then(m => m.DoctorLayoutComponent),
     children: [
       { path: '', loadComponent: () => import('./features/dashboard/doctor-dashboard/doctor-dashboard.component').then(m => m.DoctorDashboardComponent) },
-      { path: 'doctors', loadChildren: () => import('./features/doctors/doctors.routes').then(m => m.doctorsRoutes) }
+      { path: 'doctors', loadChildren: () => import('./features/doctors/doctors.routes').then(m => m.doctorsRoutes) },
+      { path: 'billing', loadChildren: () => import('./features/billing/billing.routes').then(m => m.billingRoutes) },
+      { path: 'medical', loadChildren: () => import('./features/medical/medical.routes').then(m => m.medicalRoutes) },
+      { path: 'notifications', loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.notificationRoutes) }
     ]
   },
-  {
+    {
     path: 'admin',
     loadComponent: () => import('./layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
     children: [
@@ -57,7 +66,9 @@ export const routes: Routes = [
       { path: 'users', loadComponent: () => import('./features/admin/users-management/users-management.component').then(m => m.UsersManagementComponent) },
       { path: 'appointments', loadComponent: () => import('./features/admin/appointments-management/appointments-management.component').then(m => m.AppointmentsManagementComponent) },
       { path: 'billing', loadComponent: () => import('./features/admin/billing/billing.component').then(m => m.BillingComponent) },
-      { path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then(m => m.ReportsComponent) }
+      { path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then(m => m.ReportsComponent) },
+      { path: 'medical', loadChildren: () => import('./features/medical/medical.routes').then(m => m.medicalRoutes) },
+      { path: 'notifications', loadChildren: () => import('./features/notifications/notifications.routes').then(m => m.notificationRoutes) }
     ]
   }
 ];

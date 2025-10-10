@@ -22,13 +22,51 @@ import {
   UpdatePatientDto
 } from '../models/patient.models';
 
+// Add these DTO interfaces for email verification
+export interface EmailVerificationRequestDto {
+  email: string;
+}
+
+export interface VerifyCodeRequestDto {
+  email: string;
+  code: string;
+}
+
+export interface EmailVerificationResponseDto {
+  success: boolean;
+  message: string;
+}
+
+export interface VerifyCodeResponseDto {
+  isValid: boolean;
+  message: string;
+}
+
+export interface GoogleAuthDto {
+  idToken: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class UsersService {
   private readonly apiUrl = `${environment.apiUrl}/Users`;
 
-  constructor(private http: HttpClient) {}
+  constructor(readonly http: HttpClient) {}
+
+  // ───────────────────── EMAIL VERIFICATION ─────────────────────
+  sendVerificationCode(request: EmailVerificationRequestDto): Observable<EmailVerificationResponseDto> {
+    return this.http.post<EmailVerificationResponseDto>(`${this.apiUrl}/send-verification-code`, request);
+  }
+
+  verifyCode(request: VerifyCodeRequestDto): Observable<VerifyCodeResponseDto> {
+    return this.http.post<VerifyCodeResponseDto>(`${this.apiUrl}/verify-code`, request);
+  }
+
+  // ───────────────────── GOOGLE AUTH ─────────────────────
+  googleSignUpPatient(googleAuth: GoogleAuthDto): Observable<AuthResponseDto> {
+    return this.http.post<AuthResponseDto>(`${this.apiUrl}/auth/google/patient`, googleAuth);
+  }
 
   // ───────────────────── USERS ─────────────────────
   getAllUsers(): Observable<UserDto[]> {
@@ -64,17 +102,14 @@ export class UsersService {
     return this.http.post<DoctorDto>(`${this.apiUrl}/register/doctor`, dto);
   }
 
-  // Fixed: Changed from `/doctor/${id}` to `/${id}/doctor`
   updateDoctor(userId: number, dto: UpdateDoctorDto): Observable<DoctorDto> {
     return this.http.put<DoctorDto>(`${this.apiUrl}/${userId}/doctor`, dto);
   }
 
-  // Fixed: Changed from `/doctor/${id}` to `/${id}/doctor`
   deleteDoctor(userId: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${userId}/doctor`);
   }
 
-  // Fixed: Changed from `/doctor/${id}` to `/${id}/doctor`
   getDoctorById(userId: number): Observable<DoctorDto> {
     return this.http.get<DoctorDto>(`${this.apiUrl}/${userId}/doctor`);
   }
@@ -88,17 +123,14 @@ export class UsersService {
     return this.http.post<PatientDto>(`${this.apiUrl}/register/patient`, dto);
   }
 
-  // Fixed: Changed from `/patient/${id}` to `/${id}/patient`
   updatePatient(userId: number, dto: UpdatePatientDto): Observable<PatientDto> {
     return this.http.put<PatientDto>(`${this.apiUrl}/${userId}/patient`, dto);
   }
 
-  // Fixed: Changed from `/patient/${id}` to `/${id}/patient`
   deletePatient(userId: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${userId}/patient`);
   }
 
-  // Fixed: Changed from `/patient/${id}` to `/${id}/patient`
   getPatientById(userId: number): Observable<PatientDto> {
     return this.http.get<PatientDto>(`${this.apiUrl}/${userId}/patient`);
   }

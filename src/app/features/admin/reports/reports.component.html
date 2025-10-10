@@ -1,4 +1,12 @@
 <div class="reports">
+  <!-- Loading overlay -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading reports...</p>
+    </div>
+  </div>
+
   <!-- Header -->
   <div class="header">
     <div class="header-content">

@@ -125,12 +125,12 @@ import { NotificationPanelComponent } from '../../shared/components/notification
 
           <a routerLink="/doctor/doctors/medical-record" routerLinkActive="active" class="nav-item">
   <div class="nav-icon">
-    <svg xmlns="http://www.w3.org/2000/svg" 
-         viewBox="0 0 24 24" 
-         fill="none" 
-         stroke="currentColor" 
-         stroke-width="2" 
-         stroke-linecap="round" 
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
          stroke-linejoin="round">
       <!-- Clipboard shape -->
       <path d="M9 2h6a2 2 0 0 1 2 2v2h-2V4H9v2H7V4a2 2 0 0 1 2-2z"/>
@@ -141,6 +141,64 @@ import { NotificationPanelComponent } from '../../shared/components/notification
     </svg>
   </div>
   <span class="nav-text">Medical record</span>
+  <div class="nav-indicator"></div>
+</a>
+
+          <a routerLink="/doctor/billing/invoices" routerLinkActive="active" class="nav-item">
+  <div class="nav-icon">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round">
+      <!-- Billing/payment -->
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+      <line x1="8" y1="21" x2="16" y2="21"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+  </div>
+  <span class="nav-text">Billing</span>
+  <div class="nav-indicator"></div>
+</a>
+
+          <a routerLink="/doctor/medical/lab-tests" routerLinkActive="active" class="nav-item">
+  <div class="nav-icon">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round">
+      <!-- Test tube -->
+      <path d="M14.5 2v6.5c0 .8-.7 1.5-1.5 1.5h-5c-.8 0-1.5-.7-1.5-1.5V2"/>
+      <path d="M8.5 2h7"/>
+      <path d="M9 12.5v6"/>
+      <path d="M15 12.5v6"/>
+      <path d="M7 18.5h10"/>
+    </svg>
+  </div>
+  <span class="nav-text">Lab Tests</span>
+  <div class="nav-indicator"></div>
+</a>
+
+          <a routerLink="/doctor/notifications/center" routerLinkActive="active" class="nav-item">
+  <div class="nav-icon">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round">
+      <!-- Notification bell -->
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  </div>
+  <span class="nav-text">Notifications</span>
   <div class="nav-indicator"></div>
 </a>
 

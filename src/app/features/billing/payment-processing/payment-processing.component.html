@@ -1,0 +1,355 @@
+<div class="payment-processing-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">Payment Processing</h1>
+      <p class="page-subtitle">Manage and track patient payments</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      <i class="icon">add</i>
+      <span>Process Payment</span>
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="icon">payment</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ getTotalAmount() | currency:'USD':'symbol':'1.0-0' }}</h3>
+        <p>Total Payments</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon success">
+        <i class="icon">check_circle</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ filteredPayments.length }}</h3>
+        <p>Processed Payments</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="icon">search</i>
+          Search
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="filterPayments()"
+          placeholder="Search by transaction ID..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="icon">payment</i>
+          Payment Method
+        </label>
+        <select
+          [(ngModel)]="selectedMethod"
+          (change)="filterPayments()"
+          class="filter-select"
+        >
+          <option value="all">All Methods</option>
+          <option value="CreditCard">Credit Card</option>
+          <option value="PayPal">PayPal</option>
+          <option value="Cash">Cash</option>
+          <option value="Insurance">Insurance</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading payments...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-state">
+    <div class="error-icon">
+      <i class="icon">error</i>
+    </div>
+    <div class="error-content">
+      <h3>Error Loading Payments</h3>
+      <p>{{ error }}</p>
+      <button class="retry-btn" (click)="loadPayments()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Payments Table -->
+  <div *ngIf="!isLoading && !error" class="payments-section">
+    <div class="table-container">
+      <table class="payments-table">
+        <thead>
+          <tr>
+            <th>Payment ID</th>
+            <th>Invoice ID</th>
+            <th>Method</th>
+            <th>Transaction ID</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let payment of filteredPayments" class="payment-row">
+            <td class="payment-id">#{{ payment.paymentId }}</td>
+            <td class="invoice-id">#{{ payment.invoiceId }}</td>
+            <td class="method">
+              <span class="method-badge" [style.background-color]="getMethodColor(payment.paymentMethod)">
+                <i class="icon">{{ getMethodIcon(payment.paymentMethod) }}</i>
+                {{ payment.paymentMethod }}
+              </span>
+            </td>
+            <td class="transaction-id">{{ payment.transactionId }}</td>
+            <td class="amount">{{ formatCurrency(payment.amountPaid) }}</td>
+            <td class="date">{{ formatDate(payment.paymentDate) }}</td>
+            <td class="actions">
+              <button class="btn-icon" (click)="openDetailsModal(payment)" title="View Details">
+                <i class="icon">visibility</i>
+              </button>
+              <button class="btn-icon" (click)="openEditModal(payment)" title="Edit Payment">
+                <i class="icon">edit</i>
+              </button>
+              <button class="btn-icon delete" (click)="deletePayment(payment)" title="Delete Payment">
+                <i class="icon">delete</i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredPayments.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <i class="icon">payment</i>
+        </div>
+        <h3>No payments found</h3>
+        <p *ngIf="searchTerm || selectedMethod !== 'all'">
+          Try adjusting your search criteria or filters.
+        </p>
+        <p *ngIf="!searchTerm && selectedMethod === 'all'">
+          No payments have been processed yet.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Payment Modal -->
+  <div *ngIf="showCreateModal" class="modal-overlay" (click)="closeCreateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Process New Payment</h2>
+        <button class="close-btn" (click)="closeCreateModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form class="payment-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Invoice ID *</label>
+              <input
+                type="number"
+                [(ngModel)]="newPayment.invoiceId"
+                class="form-input"
+                placeholder="Enter invoice ID"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Payment Method *</label>
+              <select [(ngModel)]="newPayment.paymentMethod" class="form-select">
+                <option *ngFor="let option of paymentMethodOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Transaction ID *</label>
+              <input
+                type="text"
+                [(ngModel)]="newPayment.transactionId"
+                class="form-input"
+                placeholder="Enter transaction ID"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount ($) *</label>
+              <input
+                type="number"
+                [(ngModel)]="newPayment.amountPaid"
+                class="form-input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div *ngIf="error" class="form-error">
+            <i class="icon">error</i>
+            {{ error }}
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateModal()">Cancel</button>
+        <button class="btn-primary" (click)="createPayment()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Process Payment</span>
+          <span *ngIf="isLoading">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Details Modal -->
+  <div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeDetailsModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Payment Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedPayment">
+        <div class="payment-details">
+          <div class="detail-row">
+            <span class="detail-label">Payment ID:</span>
+            <span class="detail-value">#{{ selectedPayment.paymentId }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Invoice ID:</span>
+            <span class="detail-value">#{{ selectedPayment.invoiceId }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Payment Method:</span>
+            <span class="detail-value">
+              <span class="method-badge" [style.background-color]="getMethodColor(selectedPayment.paymentMethod)">
+                <i class="icon">{{ getMethodIcon(selectedPayment.paymentMethod) }}</i>
+                {{ selectedPayment.paymentMethod }}
+              </span>
+            </span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Transaction ID:</span>
+            <span class="detail-value">{{ selectedPayment.transactionId }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Amount:</span>
+            <span class="detail-value amount">{{ formatCurrency(selectedPayment.amountPaid) }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Payment Date:</span>
+            <span class="detail-value">{{ formatDate(selectedPayment.paymentDate) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailsModal()">Close</button>
+        <button class="btn-primary" (click)="openEditModal(selectedPayment!)" *ngIf="selectedPayment">
+          Edit Payment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Payment Modal -->
+  <div *ngIf="showEditModal" class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Edit Payment</h2>
+        <button class="close-btn" (click)="closeEditModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedPayment">
+        <div class="payment-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Payment Method *</label>
+              <select [(ngModel)]="editPayment.paymentMethod" class="form-select">
+                <option *ngFor="let option of paymentMethodOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount ($) *</label>
+              <input
+                type="number"
+                [(ngModel)]="editPayment.amountPaid"
+                class="form-input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Transaction ID *</label>
+              <input
+                type="text"
+                [(ngModel)]="editPayment.transactionId"
+                class="form-input"
+                placeholder="Enter transaction ID"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Payment Date</label>
+              <input
+                type="date"
+                [(ngModel)]="editPayment.paymentDate"
+                class="form-input"
+              />
+            </div>
+          </div>
+
+          <div *ngIf="error" class="form-error">
+            <i class="icon">error</i>
+            {{ error }}
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeEditModal()">Cancel</button>
+        <button class="btn-primary" (click)="updatePayment()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Update Payment</span>
+          <span *ngIf="isLoading">Updating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

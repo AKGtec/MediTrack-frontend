@@ -84,6 +84,25 @@ import { NotificationPanelComponent } from '../../shared/components/notification
             <div class="nav-indicator"></div>
           </a>
 
+          <a routerLink="/patient/patients/prescriptions" routerLinkActive="active" class="nav-item">
+            <div class="nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   stroke="currentColor"
+                   stroke-width="2"
+                   stroke-linecap="round"
+                   stroke-linejoin="round">
+                <!-- Capsule -->
+                <path d="M7.5 7.5l9 9"/>
+                <rect x="3" y="3" width="8" height="12" rx="4" transform="rotate(45 7 7)"/>
+                <rect x="13" y="9" width="8" height="12" rx="4" transform="rotate(45 17 13)"/>
+              </svg>
+            </div>
+            <span class="nav-text">Prescriptions</span>
+            <div class="nav-indicator"></div>
+          </a>
+
           <a routerLink="/patient/patients/profile" routerLinkActive="active" class="nav-item">
             <div class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

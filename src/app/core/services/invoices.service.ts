@@ -13,6 +13,14 @@ export class InvoicesService {
   constructor(readonly http: HttpClient) { }
 
   /**
+   * Get all invoices
+   * @returns Observable of InvoiceDto array
+   */
+  getAllInvoices(): Observable<InvoiceDto[]> {
+    return this.http.get<InvoiceDto[]>(this.apiUrl);
+  }
+
+  /**
    * Get invoice by ID
    * @param id Invoice ID
    * @returns Observable of InvoiceDto

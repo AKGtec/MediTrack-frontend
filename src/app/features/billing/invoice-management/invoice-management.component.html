@@ -1,0 +1,343 @@
+<div class="invoice-management-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">Invoice Management</h1>
+      <p class="page-subtitle">Manage patient invoices and billing records</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      <i class="icon">add</i>
+      <span>Create Invoice</span>
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="icon">receipt</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ getTotalAmount() | currency:'USD':'symbol':'1.0-0' }}</h3>
+        <p>Total Amount</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon paid">
+        <i class="icon">check_circle</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ getPaidAmount() | currency:'USD':'symbol':'1.0-0' }}</h3>
+        <p>Paid Amount</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon pending">
+        <i class="icon">schedule</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ getPendingAmount() | currency:'USD':'symbol':'1.0-0' }}</h3>
+        <p>Pending Amount</p>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="card-icon">
+        <i class="icon">description</i>
+      </div>
+      <div class="card-content">
+        <h3>{{ filteredInvoices.length }}</h3>
+        <p>Total Invoices</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="icon">search</i>
+          Search
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="filterInvoices()"
+          placeholder="Search by patient or doctor name..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="icon">filter_list</i>
+          Status
+        </label>
+        <select
+          [(ngModel)]="selectedStatus"
+          (change)="filterInvoices()"
+          class="filter-select"
+        >
+          <option value="all">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Paid">Paid</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading invoices...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-state">
+    <div class="error-icon">
+      <i class="icon">error</i>
+    </div>
+    <div class="error-content">
+      <h3>Error Loading Invoices</h3>
+      <p>{{ error }}</p>
+      <button class="retry-btn" (click)="loadInvoices()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Invoices Table -->
+  <div *ngIf="!isLoading && !error" class="invoices-section">
+    <div class="table-container">
+      <table class="invoices-table">
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Issue Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let invoice of filteredInvoices" class="invoice-row">
+            <td class="invoice-id">#{{ invoice.invoiceId }}</td>
+            <td class="patient-name">{{ invoice.patientName }}</td>
+            <td class="doctor-name">{{ invoice.doctorName }}</td>
+            <td class="amount">{{ formatCurrency(invoice.amount) }}</td>
+            <td class="status">
+              <span class="status-badge" [style.background-color]="getStatusColor(invoice.status)">
+                <i class="icon">{{ getStatusIcon(invoice.status) }}</i>
+                {{ invoice.status }}
+              </span>
+            </td>
+            <td class="date">{{ formatDate(invoice.issuedDate) }}</td>
+            <td class="actions">
+              <button class="btn-icon" (click)="openDetailsModal(invoice)" title="View Details">
+                <i class="icon">visibility</i>
+              </button>
+              <button class="btn-icon" (click)="openStatusModal(invoice)" title="Update Status">
+                <i class="icon">edit</i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredInvoices.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <i class="icon">receipt_long</i>
+        </div>
+        <h3>No invoices found</h3>
+        <p *ngIf="searchTerm || selectedStatus !== 'all'">
+          Try adjusting your search criteria or filters.
+        </p>
+        <p *ngIf="!searchTerm && selectedStatus === 'all'">
+          No invoices have been created yet.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Invoice Modal -->
+  <div *ngIf="showCreateModal" class="modal-overlay" (click)="closeCreateModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create New Invoice</h2>
+        <button class="close-btn" (click)="closeCreateModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form class="invoice-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Appointment *</label>
+              <select
+                [(ngModel)]="selectedAppointmentId"
+                (change)="onAppointmentIdChange()"
+                class="form-select"
+              >
+                <option value="0">-- Select an appointment --</option>
+                <option *ngFor="let apt of appointments" [value]="apt.appointmentId">
+                  #{{ apt.appointmentId }} - {{ apt.patientName }} ({{ formatDate(apt.appointmentDate) }})
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount ($) *</label>
+              <input
+                type="number"
+                [(ngModel)]="newInvoice.amount"
+                class="form-input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div *ngIf="error" class="form-error">
+            <i class="icon">error</i>
+            {{ error }}
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateModal()">Cancel</button>
+        <button class="btn-primary" (click)="createInvoice()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Create Invoice</span>
+          <span *ngIf="isLoading">Creating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Details Modal -->
+  <div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeDetailsModal()">
+    <div class="modal-content large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Invoice Details</h2>
+        <button class="close-btn" (click)="closeDetailsModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedInvoice">
+        <div class="invoice-details">
+          <div class="detail-row">
+            <span class="detail-label">Invoice ID:</span>
+            <span class="detail-value">#{{ selectedInvoice.invoiceId }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Patient:</span>
+            <span class="detail-value">{{ selectedInvoice.patientName }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Doctor:</span>
+            <span class="detail-value">{{ selectedInvoice.doctorName }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Amount:</span>
+            <span class="detail-value amount">{{ formatCurrency(selectedInvoice.amount) }}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value">
+              <span class="status-badge" [style.background-color]="getStatusColor(selectedInvoice.status)">
+                <i class="icon">{{ getStatusIcon(selectedInvoice.status) }}</i>
+                {{ selectedInvoice.status }}
+              </span>
+            </span>
+          </div>
+
+          <div class="detail-row">
+            <span class="detail-label">Issue Date:</span>
+            <span class="detail-value">{{ formatDate(selectedInvoice.issuedDate) }}</span>
+          </div>
+
+          <div class="detail-row" *ngIf="selectedInvoice.paidDate">
+            <span class="detail-label">Paid Date:</span>
+            <span class="detail-value">{{ formatDate(selectedInvoice.paidDate) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailsModal()">Close</button>
+        <button class="btn-primary" (click)="openStatusModal(selectedInvoice!)" *ngIf="selectedInvoice">
+          Update Status
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Update Modal -->
+  <div *ngIf="showStatusModal" class="modal-overlay" (click)="closeStatusModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Update Invoice Status</h2>
+        <button class="close-btn" (click)="closeStatusModal()">
+          <i class="icon">close</i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedInvoice">
+        <div class="status-update-form">
+          <div class="form-group">
+            <label class="form-label">Current Status</label>
+            <div class="current-status">
+              <span class="status-badge" [style.background-color]="getStatusColor(selectedInvoice.status)">
+                <i class="icon">{{ getStatusIcon(selectedInvoice.status) }}</i>
+                {{ selectedInvoice.status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">New Status *</label>
+            <select [(ngModel)]="statusUpdate.status" class="form-select">
+              <option *ngFor="let option of statusOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="statusUpdate.status === 'Paid'">
+            <label class="form-label">Paid Date</label>
+            <input
+              type="date"
+              [(ngModel)]="statusUpdate.paidDate"
+              class="form-input"
+            />
+          </div>
+
+          <div *ngIf="error" class="form-error">
+            <i class="icon">error</i>
+            {{ error }}
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeStatusModal()">Cancel</button>
+        <button class="btn-primary" (click)="updateInvoiceStatus()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Update Status</span>
+          <span *ngIf="isLoading">Updating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
